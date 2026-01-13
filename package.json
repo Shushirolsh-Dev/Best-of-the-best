@@ -1,16 +1,15 @@
 {
   "name": "litheral-bot",
   "version": "1.0.0",
-  "description": "Litheral Bot - WhatsApp offline auto-reply with personal frontend",
+  "description": "Litheral Bot - WhatsApp offline auto-reply with personal style",
   "main": "bot.js",
   "scripts": {
     "start": "node bot.js"
   },
   "dependencies": {
-    "whatsapp-web.js": "^1.19.0",
+    "@whiskeysockets/baileys": "^5.0.0",
     "express": "^4.18.2",
-    "dotenv": "^16.0.3",
-    "qrcode-terminal": "^0.12.0"
+    "dotenv": "^16.0.3"
   },
   "engines": {
     "node": "18.x"
