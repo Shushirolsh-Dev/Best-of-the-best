@@ -1,120 +1,64 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Become a Runner - Sdel Campus Delivery</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
-    body { font-family: 'Poppins', sans-serif; background:#000; color:white; }
-    .stars { position:fixed; top:0; left:0; width:100%; height:100%; z-index:-1; }
-    .star { position:absolute; background:white; border-radius:50%; animation:fall linear infinite; }
-    @keyframes fall { to { transform:translateY(100vh); } }
-    .btn { background:#FF6600; }
-    .btn:hover { background:#e55c00; }
-    .input { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); }
-    .input:focus { border-color:#FF6600; box-shadow:0 0 0 3px rgba(255,102,0,0.2); outline:none; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Litheral Bot Setup</title>
+<style>
+  body { font-family: sans-serif; background: #121212; color: #fff; padding: 20px; }
+  input, textarea, select { width: 100%; margin-bottom: 15px; padding: 10px; border-radius: 5px; border: 1px solid #444; background: #1e1e1e; color: #fff; }
+  button { padding: 12px 20px; border: none; background: #ff6600; color: #fff; font-weight: bold; cursor: pointer; border-radius: 5px; }
+</style>
 </head>
 <body>
-  <div class="stars" id="stars"></div>
+<h1>Litheral Bot Personality Setup</h1>
 
-  <nav class="flex justify-between items-center p-6 bg-black bg-opacity-80 backdrop-blur-sm border-b border-gray-800 sticky top-0 z-10">
-    <a href="index.html" class="flex items-center text-2xl font-bold">
-      <span>Sdel</span><span class="text-orange-500 ml-1">Campus Delivery</span>
-    </a>
-  </nav>
+<form id="botForm">
+  <label>Bot Name:</label>
+  <input type="text" id="botName" placeholder="Litheral Bot" required>
 
-  <section class="min-h-screen flex items-center justify-center px-4">
-    <div class="max-w-lg w-full">
-      <div class="bg-gray-900 rounded-2xl p-8 border border-gray-800">
-        <div class="text-center mb-8">
-          <i data-lucide="zap" class="w-16 h-16 text-orange-500 mx-auto mb-4"></i>
-          <h1 class="text-3xl font-bold mb-3">Become a Verified Runner</h1>
-          <p class="text-gray-400">Earn ₦500 – ₦5,000 per delivery • Flexible hours</p>
-        </div>
+  <label>Personality:</label>
+  <select id="personality">
+    <option value="friendly">Friendly</option>
+    <option value="funny">Funny</option>
+    <option value="serious">Serious</option>
+    <option value="witty">Witty</option>
+  </select>
 
-        <!-- Current Price (Super Admin can change this in DB) -->
-        <div class="text-center mb-8 p-6 bg-gradient-to-r from-orange-900 to-orange-800 rounded-xl">
-          <p class="text-lg">Monthly Subscription Fee</p>
-          <p class="text-5xl font-bold mt-2" id="runner-price">₦5,000</p>
-          <p class="text-sm text-gray-300 mt-2">Pay via bank transfer • Get instant access after verification</p>
-        </div>
+  <label>Signature Phrases (comma separated):</label>
+  <textarea id="phrases" placeholder="Hey, Sup, How's it going?"></textarea>
 
-        <form id="runner-form" class="space-y-6">
-          <input type="text" id="name" placeholder="Full Name" required class="w-full px-5 py-4 rounded-xl input">
-          <input type="email" id="email" placeholder="Email Address" required class="w-full px-5 py-4 rounded-xl input">
-          <input type="tel" id="whatsapp" placeholder="WhatsApp Number (e.g. 09012345678)" required class="w-full px-5 py-4 rounded-xl input">
+  <label>Topics you talk about a lot:</label>
+  <textarea id="topics" placeholder="Tech, AI, Life, Motivation"></textarea>
 
-          <button type="submit" class="w-full py-5 btn rounded-xl font-bold text-lg flex items-center justify-center">
-            <i data-lucide="message-circle" class="w-6 h-6 mr-3"></i>
-            Continue on WhatsApp
-          </button>
-        </form>
+  <label>Default reply if unsure:</label>
+  <input type="text" id="defaultReply" placeholder="I’ll get back to you soon!">
 
-        <p class="text-center text-sm text-gray-500 mt-8">
-          After payment, send proof to our WhatsApp. Super Admin will verify and activate your runner account instantly.
-        </p>
-      </div>
-    </div>
-  </section>
+  <button type="submit">Save Settings</button>
+</form>
 
-  <script>
-    const supabase = window.supabase.createClient(
-      'https://crasacrormxxombnaklt.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNyYXNhY3Jvcm14eG9tYm5ha2x0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyNjg1NTAsImV4cCI6MjA3OTg0NDU1MH0.q_apkDBu_QVwebbfjRqZ7QwrsNm9xQysRoNhayNyfLU'
-    );
+<script>
+document.getElementById('botForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
 
-    // Load current runner price from DB (Super Admin can change anytime)
-    async function loadRunnerPrice() {
-      const { data } = await supabase
-        .from('site_settings')
-        .select('runner_monthly_fee')
-        .single();
-      if (data?.runner_monthly_fee) {
-        document.getElementById('runner-price').textContent = `₦${data.runner_monthly_fee.toLocaleString()}`;
-      }
-    }
-    loadRunnerPrice();
+  const settings = {
+    botName: document.getElementById('botName').value,
+    personality: document.getElementById('personality').value,
+    phrases: document.getElementById('phrases').value.split(',').map(p => p.trim()),
+    topics: document.getElementById('topics').value.split(',').map(t => t.trim()),
+    defaultReply: document.getElementById('defaultReply').value
+  };
 
-    // Stars
-    for(let i=0;i<150;i++){
-      const s=document.createElement('div'); s.className='star';
-      s.style.width=s.style.height=(Math.random()*2+1)+'px';
-      s.style.left=Math.random()*100+'vw';
-      s.style.animationDuration=(Math.random()*80+50)+'s';
-      s.style.animationDelay=Math.random()*10+'s';
-      document.getElementById('stars').appendChild(s);
-    }
-    lucide.createIcons();
+  // Save to backend
+  const res = await fetch('/save-settings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(settings)
+  });
 
-    // Submit → Open WhatsApp with pre-filled message
-    document.getElementById('runner-form').onsubmit = (e) => {
-      e.preventDefault();
-      const name = document.getElementById('name').value.trim();
-      const email = document.getElementById('email').value.trim();
-      const whatsapp = document.getElementById('whatsapp').value.trim().replace(/^0/, '234');
-
-      const message = encodeURIComponent(
-        `Hi! My name is ${name}\n` +
-        `Email: ${email}\n` +
-        `WhatsApp: ${whatsapp}\n\n` +
-        `I want to become a verified runner on Sdel Campus Delivery. ` +
-        `I have paid the monthly subscription fee. Please activate my account.`
-      );
-
-      // Change this to your real WhatsApp Business number
-      const whatsappNumber = "2348100240137";  // ← PUT YOUR NUMBER HERE
-
-      window.open(`https://wa.me/${whatsappNumber}?text=${message}`, '_blank');
-
-      // Also save to pending_runners table so you can track in admin panel
-      supabase.from('pending_runners').insert({
-        name, email, whatsapp });
-    };
-  </script>
+  if(res.ok) alert("Settings saved! Deploy your bot and it will reply like you.");
+  else alert("Error saving settings.");
+});
+</script>
 </body>
 </html>
