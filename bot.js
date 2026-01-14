@@ -43,21 +43,17 @@ catch(e){ console.log("⚠️ blocked.json not found, starting empty"); }
 const botConsent = new Map();
 const lastBlockedReminder = new Map();
 
-// -------------------- EXPRESS SETUP FOR QR --------------------
+// -------------------- EXPRESS SETUP --------------------
 const app = express();
 const PORT = process.env.PORT || 3000;
 let sock;
+let latestQR = "";
 
-app.get("/qr", async (req, res) => {
-  if(!sock) return res.send("Bot not initialized yet");
-  sock.ev.once("connection.update", async (update) => {
-    if(update.qr) {
-      const url = await qrcode.toDataURL(update.qr);
-      res.send(`<h1>Scan QR</h1><img src="${url}" />`);
-    } else {
-      res.send("No QR available, bot might be connected");
-    }
-  });
+// Serve index.html with QR
+app.get("/", (req, res) => {
+  let html = fs.readFileSync("index.html", "utf8");
+  html = html.replace("{{QR_CODE}}", latestQR ? `<img src="${latestQR}" alt="Scan QR" />` : "QR not generated yet");
+  res.send(html);
 });
 
 // -------------------- START BOT --------------------
@@ -66,16 +62,18 @@ async function startBot() {
   sock = makeWASocket({ auth: state, printQRInTerminal: false });
   sock.ev.on("creds.update", saveCreds);
 
-  sock.ev.on("connection.update", (u) => {
-    if(u.connection === "open") console.log(`✅ ${settings.botName} connected!`);
+  sock.ev.on("connection.update", async (update) => {
+    if(update.qr) {
+      latestQR = await qrcode.toDataURL(update.qr);
+      console.log("📌 QR generated! Open the hosted page to scan.");
+    }
+    if(update.connection === "open") console.log("✅ Bot connected!");
   });
 
   sock.ev.on("messages.upsert", async ({ messages }) => {
     const msg = messages[0];
     if(!msg.message) return;
-
     const from = msg.key.remoteJid;
-
     if(msg.key.fromMe) { updateLastSeen(); return; }
 
     const text = msg.message.conversation || msg.message.extendedTextMessage?.text;
