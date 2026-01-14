@@ -1,64 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Litheral Bot Setup</title>
-<style>
-  body { font-family: sans-serif; background: #121212; color: #fff; padding: 20px; }
-  input, textarea, select { width: 100%; margin-bottom: 15px; padding: 10px; border-radius: 5px; border: 1px solid #444; background: #1e1e1e; color: #fff; }
-  button { padding: 12px 20px; border: none; background: #ff6600; color: #fff; font-weight: bold; cursor: pointer; border-radius: 5px; }
-</style>
+  <meta charset="UTF-8">
+  <title>LitheralBot QR</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align:center; padding-top:50px; }
+    img { width:300px; height:300px; }
+  </style>
 </head>
 <body>
-<h1>Litheral Bot Personality Setup</h1>
-
-<form id="botForm">
-  <label>Bot Name:</label>
-  <input type="text" id="botName" placeholder="Litheral Bot" required>
-
-  <label>Personality:</label>
-  <select id="personality">
-    <option value="friendly">Friendly</option>
-    <option value="funny">Funny</option>
-    <option value="serious">Serious</option>
-    <option value="witty">Witty</option>
-  </select>
-
-  <label>Signature Phrases (comma separated):</label>
-  <textarea id="phrases" placeholder="Hey, Sup, How's it going?"></textarea>
-
-  <label>Topics you talk about a lot:</label>
-  <textarea id="topics" placeholder="Tech, AI, Life, Motivation"></textarea>
-
-  <label>Default reply if unsure:</label>
-  <input type="text" id="defaultReply" placeholder="I’ll get back to you soon!">
-
-  <button type="submit">Save Settings</button>
-</form>
-
-<script>
-document.getElementById('botForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-
-  const settings = {
-    botName: document.getElementById('botName').value,
-    personality: document.getElementById('personality').value,
-    phrases: document.getElementById('phrases').value.split(',').map(p => p.trim()),
-    topics: document.getElementById('topics').value.split(',').map(t => t.trim()),
-    defaultReply: document.getElementById('defaultReply').value
-  };
-
-  // Save to backend
-  const res = await fetch('/save-settings', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(settings)
-  });
-
-  if(res.ok) alert("Settings saved! Deploy your bot and it will reply like you.");
-  else alert("Error saving settings.");
-});
-</script>
+  <h1>Scan QR to Connect LitheralBot</h1>
+  {{QR_CODE}}
 </body>
 </html>
