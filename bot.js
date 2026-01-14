@@ -40,13 +40,26 @@ function updateLastSeen() { lastSeen = Date.now(); }
 // Base offline threshold in ms
 const BASE_OFFLINE_THRESHOLD = 60_000; // 1 minute
 
+// Load blocked users
+let blockedUsers = [];
+try {
+  blockedUsers = JSON.parse(fs.readFileSync("blocked.json", "utf8"));
+} catch(e) {
+  console.log("⚠️ blocked.json not found or invalid, starting with empty blocked list.");
+}
+
+// Track bot confirmations for unblocked users
+const botConsent = new Map(); // key: number, value: 'YES' or 'NO'
+
+// Track last reminder sent for blocked users
+const lastBlockedReminder = new Map(); // key: number, value: timestamp
+
 // -------------------- START BOT --------------------
 async function startBot() {
   const { state, saveCreds } = await useMultiFileAuthState("auth");
   const sock = makeWASocket({ auth: state, printQRInTerminal: true });
 
   sock.ev.on("creds.update", saveCreds);
-
   sock.ev.on("connection.update", (u) => {
     if(u.connection === "open") console.log(`✅ ${settings.botName} connected!`);
   });
@@ -73,19 +86,63 @@ async function startBot() {
     // Skip if user recently received a reply
     if(!canReply(from)) return;
 
+    // -------------------- BLOCKED USERS FLOW --------------------
+    if(blockedUsers.includes(from)) {
+      const now = Date.now();
+      const lastSent = lastBlockedReminder.get(from) || 0;
+
+      // Send reminder only if 24 hours have passed
+      if(now - lastSent > 24 * 60 * 60 * 1000) {
+        const reminder = `Hi! Just a friendly reminder: Litheral doesn't want to chat right now 😅. We can talk later if needed.`;
+        await sock.sendMessage(from, { text: reminder });
+        lastBlockedReminder.set(from, now);
+        console.log(`🚫 Sent blocked 24h reminder to ${from}`);
+      }
+      return;
+    }
+
+    // -------------------- BOT INTRO & CONSENT FLOW --------------------
+    if(!botConsent.has(from)) {
+      const intro = `Hey! This is a bot. Send YES if you want me to chat with you automatically, or NO if you want to wait for Litheral to come online.`;
+      await sock.sendMessage(from, { text: intro });
+      botConsent.set(from, null);
+      return;
+    }
+
+    // Check user's response to bot intro
+    const userConsent = text.trim().toUpperCase();
+    if(botConsent.get(from) === null) {
+      if(userConsent === "YES") {
+        botConsent.set(from, "YES");
+        await sock.sendMessage(from, { text: `Awesome! Chatting automatically now 🤖.` });
+        return;
+      } else if(userConsent === "NO") {
+        botConsent.set(from, "NO");
+        await sock.sendMessage(from, { text: `Alright! Waiting for Litheral to come online.` });
+        return;
+      } else {
+        await sock.sendMessage(from, { text: `Please reply with YES or NO.` });
+        return;
+      }
+    }
+
+    // Only continue AI chat if user consented YES
+    if(botConsent.get(from) !== "YES") {
+      await sock.sendMessage(from, { text: `Waiting for Litheral to come online.` });
+      return;
+    }
+
     // -------------------- RANDOM THINKING DELAY --------------------
     await delay(randomDelay(7000, 15000));
 
     // -------------------- TYPING SIMULATION --------------------
-    // Simulate typing proportional to message length
-    const typingTime = Math.min(Math.max(text.length * 200, 3000), 10000); // 3-10s based on length
+    const typingTime = Math.min(Math.max(text.length * 200, 3000), 10000);
     await sock.sendPresenceUpdate("composing", from);
     await delay(typingTime);
-    // Random small pause mid-typing to look human
     await delay(Math.floor(Math.random() * 2000) + 500);
     await sock.sendPresenceUpdate("available", from);
 
-    // Build AI prompt
+    // -------------------- AI RESPONSE --------------------
     const prompt = `You are ${settings.botName}, a ${settings.personality} person.
 Respond naturally to: "${text}".
 Use signature phrases: ${settings.phrases.join(", ")}.
@@ -94,10 +151,7 @@ If unsure, reply with "${settings.defaultReply}".`;
 
     try {
       const aiReply = await getAIReply(prompt);
-
-      // Append signature
       const finalReply = `${aiReply}\n\n${signature}`;
-
       await sock.sendMessage(from, { text: finalReply });
       console.log(`💬 Replied to ${from}: ${finalReply}`);
     } catch(e) {
