@@ -1,14 +1,14 @@
 import fetch from "node-fetch";
-import {
-  OPENAI_API_KEY,
-  ANTHROPOMORPHIC_API_KEY,
-  MISTRALAI_API_KEY,
-  DEEPSEEK_API_KEY,
-  CEREBRAS_API_KEY,
-  SAMBANOVA_API_KEY,
-  GEMINI_API_KEY,
-  GROQ_API_KEY
-} from "./bot.js"; // importing from your bot.js constants
+
+// -------------------- API KEYS --------------------
+const OPENAI_API_KEY = "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";
+const ANTHROPOMORPHIC_API_KEY = "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";
+const MISTRALAI_API_KEY = "hak1YsqUeDqbbu5sdz0lBDnUm9iKekwr";
+const DEEPSEEK_API_KEY = "sk-bf8cd516973c4a82881108f0c6927908";
+const CEREBRAS_API_KEY = "csk-n2e3djj9khp658w88dpcwmvfpct53nyrt6pyjjv2p6jjnrch";
+const SAMBANOVA_API_KEY = "201f4ee9-0780-4022-9479-f41839a0f365";
+const GEMINI_API_KEY = "AIzaSyBttLyb6mxon21wdJj4THv6zq5aIi936Ac";
+const GROQ_API_KEY = "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";
 
 // -------------------- AI REPLY FUNCTION --------------------
 export async function getAIReply(prompt, provider = "OPENAI") {
@@ -109,4 +109,4 @@ async function getSambanovaReply(prompt) {
   });
   const data = await res.json();
   return data.text || "Hmm, I couldn't think of a reply!";
-}
+                          }
