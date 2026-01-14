@@ -49,10 +49,14 @@ const PORT = process.env.PORT || 3000;
 let sock;
 let latestQR = "";
 
-// Serve index.html with QR
+// Serve index.html with QR dynamically
 app.get("/", (req, res) => {
   let html = fs.readFileSync("index.html", "utf8");
-  html = html.replace("{{QR_CODE}}", latestQR ? `<img src="${latestQR}" alt="Scan QR" />` : "QR not generated yet");
+  if(latestQR) {
+    html = html.replace("{{QR_CODE}}", `<img src="${latestQR}" alt="Scan QR" />`);
+  } else {
+    html = html.replace("{{QR_CODE}}", `<p>QR not generated yet, refresh the page after a few seconds</p>`);
+  }
   res.send(html);
 });
 
