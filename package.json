@@ -3,16 +3,19 @@
   "version": "1.0.0",
   "description": "Litheral Bot - WhatsApp offline auto-reply with personal style",
   "main": "bot.js",
+  "type": "module",
   "scripts": {
     "start": "node bot.js"
   },
   "dependencies": {
-    "@whiskeysockets/baileys": "^5.0.0",
+    "@whiskeysockets/baileys": "^5.16.1",
     "express": "^4.18.2",
-    "dotenv": "^16.0.3"
+    "qrcode": "^1.5.1",
+    "dotenv": "^16.0.3",
+    "node-fetch": "^3.3.2"
   },
   "engines": {
-    "node": "24.x"
+    "node": ">=18"
   },
   "author": "Jonathan Peter / Shushirolsh",
   "license": "MIT"
