@@ -1,22 +1,18 @@
 import fs from "fs";
+import express from "express";
 import makeWASocket, { useMultiFileAuthState } from "@whiskeysockets/baileys";
+import qrcode from "qrcode";
 import { getAIReply } from "./ai.js";
 
 // -------------------- UTILS --------------------
-
-// Simple delay
 function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
-
-// Random delay between min and max ms
 function randomDelay(min = 7000, max = 15000) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
-
-// Track last reply per user to prevent spam
 const lastReply = new Map();
-function canReply(number, minGapMs = 60 * 1000) { // 1 min gap per user
+function canReply(number, minGapMs = 60 * 1000) {
   const last = lastReply.get(number) || 0;
   if(Date.now() - last > minGapMs) {
     lastReply.set(number, Date.now());
@@ -28,38 +24,44 @@ function canReply(number, minGapMs = 60 * 1000) { // 1 min gap per user
 // -------------------- LOAD SETTINGS --------------------
 const settings = JSON.parse(fs.readFileSync("config.json", "utf8"));
 console.log(`🤖 ${settings.botName} loading...`);
-
-// Weird Unicode font for signature (cannot be true red on WhatsApp)
 const signature = "🅞🅕🅕🅘🅒🅘🅐🅛 🅛🅘🅣🅗🅔🅡🅐🅛";
 
 // -------------------- OFFLINE TRACKING --------------------
-// Track your own last activity (messages you send)
 let lastSeen = Date.now();
 function updateLastSeen() { lastSeen = Date.now(); }
+const BASE_OFFLINE_THRESHOLD = 60_000;
 
-// Base offline threshold in ms
-const BASE_OFFLINE_THRESHOLD = 60_000; // 1 minute
-
-// Load blocked users
+// -------------------- BLOCKED & CONSENT --------------------
 let blockedUsers = [];
-try {
-  blockedUsers = JSON.parse(fs.readFileSync("blocked.json", "utf8"));
-} catch(e) {
-  console.log("⚠️ blocked.json not found or invalid, starting with empty blocked list.");
-}
+try { blockedUsers = JSON.parse(fs.readFileSync("blocked.json", "utf8")); } 
+catch(e){ console.log("⚠️ blocked.json not found, starting empty"); }
 
-// Track bot confirmations for unblocked users
-const botConsent = new Map(); // key: number, value: 'YES' or 'NO'
+const botConsent = new Map();
+const lastBlockedReminder = new Map();
 
-// Track last reminder sent for blocked users
-const lastBlockedReminder = new Map(); // key: number, value: timestamp
+// -------------------- EXPRESS SETUP FOR QR --------------------
+const app = express();
+const PORT = process.env.PORT || 3000;
+let sock;
+
+app.get("/qr", async (req, res) => {
+  if(!sock) return res.send("Bot not initialized yet");
+  sock.ev.once("connection.update", async (update) => {
+    if(update.qr) {
+      const url = await qrcode.toDataURL(update.qr);
+      res.send(`<h1>Scan QR</h1><img src="${url}" />`);
+    } else {
+      res.send("No QR available, bot might be connected");
+    }
+  });
+});
 
 // -------------------- START BOT --------------------
 async function startBot() {
   const { state, saveCreds } = await useMultiFileAuthState("auth");
-  const sock = makeWASocket({ auth: state, printQRInTerminal: true });
-
+  sock = makeWASocket({ auth: state, printQRInTerminal: false });
   sock.ev.on("creds.update", saveCreds);
+
   sock.ev.on("connection.update", (u) => {
     if(u.connection === "open") console.log(`✅ ${settings.botName} connected!`);
   });
@@ -70,11 +72,7 @@ async function startBot() {
 
     const from = msg.key.remoteJid;
 
-    // Update lastSeen if the message is from yourself
-    if(msg.key.fromMe) {
-      updateLastSeen();
-      return;
-    }
+    if(msg.key.fromMe) { updateLastSeen(); return; }
 
     const text = msg.message.conversation || msg.message.extendedTextMessage?.text;
     if(!text) return;
@@ -82,18 +80,14 @@ async function startBot() {
     // -------------------- OFFLINE CHECK --------------------
     const offlineThreshold = BASE_OFFLINE_THRESHOLD * (1 + Math.random());
     if(Date.now() - lastSeen < offlineThreshold) return;
-
-    // Skip if user recently received a reply
     if(!canReply(from)) return;
 
-    // -------------------- BLOCKED USERS FLOW --------------------
+    // -------------------- BLOCKED FLOW --------------------
     if(blockedUsers.includes(from)) {
       const now = Date.now();
       const lastSent = lastBlockedReminder.get(from) || 0;
-
-      // Send reminder only if 24 hours have passed
-      if(now - lastSent > 24 * 60 * 60 * 1000) {
-        const reminder = `Hi! Just a friendly reminder: Litheral doesn't want to chat right now 😅. We can talk later if needed.`;
+      if(now - lastSent > 24*60*60*1000) {
+        const reminder = `Hi! Just a friendly reminder: Litheral doesn't want to chat right now 😅.`;
         await sock.sendMessage(from, { text: reminder });
         lastBlockedReminder.set(from, now);
         console.log(`🚫 Sent blocked 24h reminder to ${from}`);
@@ -101,15 +95,14 @@ async function startBot() {
       return;
     }
 
-    // -------------------- BOT INTRO & CONSENT FLOW --------------------
+    // -------------------- BOT INTRO & CONSENT --------------------
     if(!botConsent.has(from)) {
-      const intro = `Hey! This is a bot. Send YES if you want me to chat with you automatically, or NO if you want to wait for Litheral to come online.`;
+      const intro = `Hey! This is a bot. Send YES to chat automatically, NO to wait for Litheral to come online.`;
       await sock.sendMessage(from, { text: intro });
       botConsent.set(from, null);
       return;
     }
 
-    // Check user's response to bot intro
     const userConsent = text.trim().toUpperCase();
     if(botConsent.get(from) === null) {
       if(userConsent === "YES") {
@@ -126,23 +119,19 @@ async function startBot() {
       }
     }
 
-    // Only continue AI chat if user consented YES
     if(botConsent.get(from) !== "YES") {
       await sock.sendMessage(from, { text: `Waiting for Litheral to come online.` });
       return;
     }
 
-    // -------------------- RANDOM THINKING DELAY --------------------
-    await delay(randomDelay(7000, 15000));
-
-    // -------------------- TYPING SIMULATION --------------------
-    const typingTime = Math.min(Math.max(text.length * 200, 3000), 10000);
+    // -------------------- TYPING & AI --------------------
+    await delay(randomDelay(7000,15000));
+    const typingTime = Math.min(Math.max(text.length*200, 3000),10000);
     await sock.sendPresenceUpdate("composing", from);
     await delay(typingTime);
-    await delay(Math.floor(Math.random() * 2000) + 500);
+    await delay(Math.floor(Math.random()*2000)+500);
     await sock.sendPresenceUpdate("available", from);
 
-    // -------------------- AI RESPONSE --------------------
     const prompt = `You are ${settings.botName}, a ${settings.personality} person.
 Respond naturally to: "${text}".
 Use signature phrases: ${settings.phrases.join(", ")}.
@@ -162,3 +151,4 @@ If unsure, reply with "${settings.defaultReply}".`;
 
 // -------------------- LAUNCH --------------------
 startBot().catch(err => console.error("💥 Bot crashed:", err));
+app.listen(PORT, () => console.log(`🌐 QR server running on port ${PORT}`));
