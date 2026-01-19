@@ -1,36 +1,38 @@
-const CACHE_NAME = 'litheral-v1';
-const ASSETS = [
+const CACHE_NAME = 'litheral-cache-v1';
+
+const urlsToCache = [
   '/',
   '/index.html',
-  '/auth.html',
-  '/manifest.json',
-  '/icon.svg',
-  '/IMG_20260120_001022_124.png'
+  '/icon-192.png'
+  // Add your CSS, JS, other images here later, e.g. '/style.css', '/script.js'
 ];
 
-// Install & Cache
-self.addEventListener('install', (event) => {
+self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS);
-    })
+    caches.open(CACHE_NAME)
+      .then(cache => {
+        console.log('Caching Litheral core files');
+        return cache.addAll(urlsToCache);
+      })
   );
   self.skipWaiting();
 });
 
-// Activate & Clean
-self.addEventListener('activate', (event) => {
+self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(keys.map((k) => k !== CACHE_NAME && caches.delete(k)));
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.filter(name => name !== CACHE_NAME)
+          .map(name => caches.delete(name))
+      );
     })
   );
-  return self.clients.claim();
+  self.clients.claim();
 });
 
-// Fetch Logic
-self.addEventListener('fetch', (event) => {
+self.addEventListener('fetch', event => {
   event.respondWith(
-    fetch(event.request).catch(() => caches.match(event.request))
+    caches.match(event.request)
+      .then(response => response || fetch(event.request))
   );
 });
