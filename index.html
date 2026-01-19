@@ -2,152 +2,174 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="manifest" href="manifest.json">
-    <title>Litheral | Voice Companion</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Litheral | Infinite Companion</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <style>
-        :root { --bg: #0f172a; --accent: #38bdf8; --text: #f8fafc; }
-        body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
-        .container { text-align: center; width: 85%; max-width: 400px; }
+        :root { --bg: #050810; --accent: #38bdf8; --text: #f8fafc; }
+        body { background: var(--bg); color: var(--text); font-family: -apple-system, sans-serif; margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; touch-action: manipulation; }
+        .container { text-align: center; width: 90%; max-width: 400px; transition: 0.5s; }
         .hidden { display: none !important; }
         
-        /* Install Gate */
-        #install-gate { padding: 20px; border: 1px dashed var(--accent); border-radius: 15px; }
-        .step { margin: 20px 0; font-size: 0.9rem; opacity: 0.8; }
+        /* THE WAVES */
+        .wave-container { display: flex; align-items: center; justify-content: center; height: 100px; gap: 8px; margin: 20px 0; cursor: pointer; }
+        .bar { width: 8px; height: 20px; background: var(--accent); border-radius: 4px; transition: height 0.2s ease; }
+        .animating .bar { animation: sound-wave 1s infinite ease-in-out; }
+        @keyframes sound-wave { 0%, 100% { height: 20px; } 50% { height: 80px; } }
+        .bar:nth-child(2) { animation-delay: 0.1s; } .bar:nth-child(3) { animation-delay: 0.2s; }
 
-        /* App UI */
-        .pulse { width: 100px; height: 100px; background: var(--accent); border-radius: 50%; margin: 40px auto; box-shadow: 0 0 20px var(--accent); animation: pulse 2s infinite; opacity: 0.5; }
-        @keyframes pulse { 0% { transform: scale(0.9); opacity: 0.3; } 50% { transform: scale(1.1); opacity: 0.6; } 100% { transform: scale(0.9); opacity: 0.3; } }
-        #status { margin-top: 20px; color: var(--accent); font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
-        #debug { font-size: 0.7rem; opacity: 0.3; margin-top: 10px; min-height: 1em; }
-        
-        input, button { padding: 15px; width: 100%; border-radius: 12px; border: none; margin-top: 15px; box-sizing: border-box; font-size: 1rem; }
-        input { background: #1e293b; color: white; }
-        button { background: var(--accent); font-weight: bold; cursor: pointer; color: var(--bg); }
+        input, button { padding: 18px; width: 100%; border-radius: 15px; border: none; margin-top: 15px; box-sizing: border-box; font-size: 1rem; }
+        input { background: #1e293b; color: white; border: 1px solid #334155; }
+        button { background: var(--accent); font-weight: bold; cursor: pointer; color: #050810; }
+        #status { color: var(--accent); font-size: 0.7rem; letter-spacing: 2px; margin-top: 15px; opacity: 0.7; font-weight: bold; }
+        .small-text { font-size: 0.8rem; margin-top: 20px; opacity: 0.5; }
     </style>
 </head>
 <body>
 
-    <div id="install-gate" class="container">
-        <h1>Litheral</h1>
-        <p>To stay present in the background, please install the app.</p>
-        <div class="step"><strong>iPhone:</strong> Share > Add to Home Screen</div>
-        <div class="step"><strong>Android:</strong> Menu > Install App</div>
+    <div id="auth-screen" class="container">
+        <h1>LITHERAL</h1>
+        <input type="email" id="email" placeholder="Email">
+        <input type="password" id="password" placeholder="Password">
+        <button id="loginBtn" onclick="handleLogin()">Wake Litheral</button>
+        <p class="small-text">New? Just type an email & password to sign up.</p>
     </div>
 
-    <div id="setup" class="container hidden">
-        <h1>Litheral</h1>
-        <input type="text" id="userNameInput" placeholder="What's your name?">
-        <button onclick="initLitheral()">Activate Companion</button>
-    </div>
-
-    <div id="active-session" class="container hidden">
-        <div class="pulse"></div>
-        <p id="status">Waiting for "Litheral"...</p>
-        <p id="debug"></p>
-        
-        <audio id="silentPlayer" loop>
-            <source src="https://raw.githubusercontent.com/anars/blank-audio/master/10-seconds-of-silence.mp3">
-        </audio>
+    <div id="app-screen" class="container hidden">
+        <div id="wavebox" class="wave-container" onclick="manualTrigger()">
+            <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+        </div>
+        <h2 id="nameDisplay">Litheral</h2>
+        <p id="status">INITIALIZING...</p>
     </div>
 
     <script>
-        // PWA Detection
-        window.addEventListener('load', () => {
-            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-            if (isStandalone) {
-                document.getElementById('install-gate').classList.add('hidden');
-                document.getElementById('setup').classList.remove('hidden');
-            }
-        });
-
-        // App State
-        let userName = "";
-        let isSpeaking = false;
+        // --- 1. CONFIGURATION ---
+        const SUPABASE_URL = 'https://jxdbpowjwxfofalcdsbn.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4ZGJwb3dqd3hmb2ZhbGNkc2JuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM4MjEwMjUsImV4cCI6MjA3OTM5NzAyNX0.iy1H39Uy7VERdK_Jlv8bAaRiFDV4Ps6sH90lcqcXCK8';
+        const GEMINI_KEY = 'AIzaSyBttLyb6mxon21wdJj4THv6zq5aIi936Ac';
         
-        // Music Engine
-        const vibePlayer = new Audio();
-        vibePlayer.loop = true;
-        const vibeLibrary = {
-            "ghost": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3", // Use direct .mp3 links here
-            "chill": "https://files.freemusicarchive.org/storage-freemusicarchive-org/music/no_curator/Ketsa/Raising_Frequecy/Ketsa_-_08_-_Day_Trip.mp3"
-        };
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        let currentUser = null;
+        let isSpeaking = false;
 
-        // Voice Engine
+        // --- 2. AUTHENTICATION ---
+        async function handleLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
+            
+            if (error) {
+                // If user doesn't exist, try signing up
+                const { data: upData, error: upError } = await _supabase.auth.signUp({ email, password });
+                if (upError) return alert(upError.message);
+                alert("Account created! Tap 'Wake Litheral' again to enter.");
+            } else {
+                currentUser = data.user;
+                startApp();
+            }
+        }
+
+        function startApp() {
+            document.getElementById('auth-screen').classList.add('hidden');
+            document.getElementById('app-screen').classList.remove('hidden');
+            document.getElementById('status').innerText = "TAP WAVES TO START";
+            
+            // Interaction required for Mobile Audio
+            speak("I'm awake. Tell me anything, I'm listening.");
+        }
+
+        // --- 3. VOICE ENGINE ---
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         const recognition = new SpeechRecognition();
         recognition.continuous = false;
-        recognition.lang = 'en-US';
+        recognition.interimResults = false;
+
+        function manualTrigger() {
+            if (!isSpeaking) recognition.start();
+        }
+
+        recognition.onstart = () => {
+            document.getElementById('status').innerText = "LISTENING...";
+            toggleWaves(true);
+        };
+
+        recognition.onresult = async (event) => {
+            const transcript = event.results[0][0].transcript;
+            toggleWaves(false);
+            processWithAI(transcript);
+        };
+
+        recognition.onerror = () => {
+            toggleWaves(false);
+            document.getElementById('status').innerText = "TAP TO TRY AGAIN";
+        };
+
+        // --- 4. INFINITE MEMORY & AI ---
+        async function processWithAI(userInput) {
+            isSpeaking = true;
+            document.getElementById('status').innerText = "THINKING...";
+
+            // Fetch last 15 memories from Supabase
+            const { data: memories } = await _supabase
+                .from('memories')
+                .select('content')
+                .eq('user_id', currentUser.id)
+                .order('created_at', { ascending: false })
+                .limit(15);
+
+            const context = memories ? memories.map(m => m.content).join(" | ") : "No prior memories.";
+
+            const systemPrompt = `You are Litheral, a chill AI companion. Your vibe is 'homie'—not a robot. 
+            Use these memories of your friend to be personal: [${context}]. 
+            If they tell you something new (family, age, school, favorites), start your reply with 'SAVING:' then your response. 
+            Example: 'SAVING: Yo that's wild you go to Kings College!'`;
+
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: `${systemPrompt}\n\nUser: ${userInput}` }] }]
+                    })
+                });
+
+                const json = await response.json();
+                let aiReply = json.candidates[0].content.parts[0].text;
+
+                // Handle Saving to Supabase
+                if (aiReply.includes("SAVING:")) {
+                    await _supabase.from('memories').insert([{ 
+                        user_id: currentUser.id, 
+                        content: userInput 
+                    }]);
+                    aiReply = aiReply.replace("SAVING:", "").trim();
+                }
+
+                speak(aiReply);
+            } catch (err) {
+                console.error(err);
+                speak("My brain glitched for a second, say that again?");
+            }
+        }
 
         function speak(text) {
-            isSpeaking = true;
-            recognition.stop(); 
             const utterance = new SpeechSynthesisUtterance(text);
-            utterance.onend = () => { isSpeaking = false; startListening(); };
+            utterance.onstart = () => toggleWaves(true);
+            utterance.onend = () => {
+                isSpeaking = false;
+                toggleWaves(false);
+                document.getElementById('status').innerText = "TAP WAVES TO TALK";
+            };
             window.speechSynthesis.speak(utterance);
         }
 
-        function startListening() {
-            if (isSpeaking) return;
-            try { 
-                recognition.start(); 
-                document.getElementById('status').innerText = "Listening...";
-            } catch(e) {}
-        }
-
-        recognition.onresult = (event) => {
-            const heard = event.results[0][0].transcript.toLowerCase();
-            document.getElementById('debug').innerText = `Heard: "${heard}"`;
-            
-            if (heard.includes("litheral")) {
-                handleCommands(heard);
-            }
-        };
-
-        function handleCommands(text) {
-            // MUSIC LOGIC
-            if (text.includes("play")) {
-                if (text.includes("ghost") || text.includes("bieber")) {
-                    vibePlayer.src = vibeLibrary.ghost;
-                    vibePlayer.play();
-                    speak("Playing that Ghost instrumental for you. It's a vibe.");
-                } else if (text.includes("chill")) {
-                    vibePlayer.src = vibeLibrary.chill;
-                    vibePlayer.play();
-                    speak("Switching to some chill instrumentals.");
-                } else {
-                    speak("I can play the Ghost instrumental or some chill vibes. What'll it be?");
-                }
-            } 
-            else if (text.includes("stop") || text.includes("quiet")) {
-                vibePlayer.pause();
-                speak("Alright, keeping it quiet.");
-            }
-            // CONVERSATION LOGIC
-            else if (text.includes("hello") || text.includes("hi")) {
-                speak(`Hey ${userName}, I'm right here.`);
-            }
-            else {
-                speak("Yeah? I'm listening.");
-            }
-        }
-
-        recognition.onend = () => { if (!isSpeaking) startListening(); };
-
-        function initLitheral() {
-            userName = document.getElementById('userNameInput').value || "Friend";
-            document.getElementById('setup').classList.add('hidden');
-            document.getElementById('active-session').classList.remove('hidden');
-            
-            // Start the background 'stay-alive' hack
-            document.getElementById('silentPlayer').play();
-            
-            speak(`Litheral is active, ${userName}. Say my name then ask me to play Ghost whenever you're ready.`);
-        }
-
-        // Service Worker Registration
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js');
+        function toggleWaves(active) {
+            const box = document.getElementById('wavebox');
+            active ? box.classList.add('animating') : box.classList.remove('animating');
         }
     </script>
 </body>
