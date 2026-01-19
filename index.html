@@ -7,123 +7,155 @@
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#050810">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
     <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
-        :root { --bg: #050810; --accent: #38bdf8; --text: #f8fafc; }
+        :root { --bg: #050810; --card: #111827; --accent: #38bdf8; --text: #f8fafc; }
+        
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
         body { 
-            background: var(--bg); color: var(--text); font-family: -apple-system, sans-serif;
-            margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden;
+            background: var(--bg); color: var(--text); 
+            font-family: 'Inter', -apple-system, sans-serif;
+            margin: 0; display: flex; align-items: center; justify-content: center; 
+            height: 100vh; overflow: hidden;
+            background-image: radial-gradient(circle at top right, #1e293b, #050810);
         }
-        .screen { text-align: center; width: 90%; max-width: 400px; transition: 0.3s; display: none; }
+
+        .screen { 
+            width: 100%; max-width: 400px; padding: 40px 25px; 
+            text-align: center; display: none;
+            animation: fadeIn 0.4s ease;
+        }
         .active { display: block; }
 
-        input {
-            width: 100%; padding: 15px; margin-top: 10px; border-radius: 12px;
-            border: 1px solid #334155; background: #1e293b; color: white; box-sizing: border-box;
-        }
-        button {
-            width: 100%; padding: 15px; margin-top: 15px; border-radius: 12px;
-            border: none; background: var(--accent); color: #050810; font-weight: bold; cursor: pointer;
-        }
-        .secondary-btn { background: transparent; color: var(--accent); border: 1px solid var(--accent); margin-top: 10px; }
-        
-        /* Install Banner */
-        #install-area {
-            position: fixed; top: 20px; width: 90%; background: #1e293b; 
-            padding: 15px; border-radius: 15px; display: none; border: 1px solid var(--accent);
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
 
-        /* Avatar & Pulse */
-        .avatar { width: 120px; height: 120px; border-radius: 50%; border: 3px solid var(--accent); margin-bottom: 20px; }
-        .pulse-container { display: flex; justify-content: center; height: 40px; gap: 5px; margin-top: 20px; }
-        .bar { width: 4px; height: 10px; background: var(--accent); border-radius: 2px; }
-        .talking .bar { animation: pulse 0.6s infinite ease-in-out; }
-        @keyframes pulse { 0%, 100% { height: 10px; } 50% { height: 40px; } }
+        h1 { font-size: 2.5rem; font-weight: 800; letter-spacing: -1px; margin-bottom: 10px; color: var(--accent); }
+        p { color: #94a3b8; margin-bottom: 30px; font-size: 0.95rem; }
+
+        input {
+            width: 100%; padding: 16px; margin-bottom: 12px; border-radius: 12px;
+            border: 1px solid #334155; background: rgba(15, 23, 42, 0.6); color: white;
+            font-size: 1rem; outline: none; transition: 0.2s;
+        }
+        input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2); }
+
+        button {
+            width: 100%; padding: 16px; border-radius: 12px; border: none;
+            background: var(--accent); color: #0f172a; font-weight: 700;
+            font-size: 1rem; cursor: pointer; transition: 0.2s;
+        }
+        button:active { transform: scale(0.98); }
+
+        .secondary-btn { background: transparent; color: var(--accent); margin-top: 10px; font-weight: 500; }
+
+        /* Install Prompt */
+        #install-banner {
+            position: fixed; bottom: 20px; left: 20px; right: 20px;
+            background: var(--accent); color: #0f172a; padding: 15px;
+            border-radius: 16px; display: none; font-weight: 600;
+            justify-content: space-between; align-items: center; z-index: 100;
+        }
+
+        /* Voice Avatar */
+        .avatar-container { position: relative; width: 150px; height: 150px; margin: 0 auto 30px; }
+        .avatar { width: 100%; height: 100%; border-radius: 50%; border: 4px solid var(--accent); }
+        .pulse-ring {
+            position: absolute; width: 100%; height: 100%; border: 4px solid var(--accent);
+            border-radius: 50%; animation: ring-pulse 2s infinite;
+        }
+        @keyframes ring-pulse { 0% { transform: scale(1); opacity: 0.5; } 100% { transform: scale(1.5); opacity: 0; } }
     </style>
 </head>
 <body>
 
-    <div id="install-area">
-        <p style="margin:0; font-size: 0.9rem;">Install Litheral for the full experience</p>
-        <button onclick="installApp()" style="padding: 8px; margin-top: 10px;">INSTALL NOW</button>
+    <div id="install-banner">
+        <span>Install Litheral App</span>
+        <button onclick="installApp()" style="width: auto; padding: 8px 15px; font-size: 0.8rem;">INSTALL</button>
     </div>
 
-    <div id="auth-screen" class="screen">
-        <h1 style="color: var(--accent)">LITHERAL</h1>
-        <p id="auth-msg">Sign in to access your memory</p>
-        <input type="email" id="email" placeholder="Email">
-        <input type="password" id="password" placeholder="Password">
-        <button onclick="handleAuth('login')">LOGIN</button>
-        <button class="secondary-btn" onclick="handleAuth('signup')">CREATE ACCOUNT</button>
+    <div id="auth-screen" class="screen active">
+        <div class="glass-card">
+            <h1>Litheral</h1>
+            <p>Your digital soul awaits.</p>
+            <input type="email" id="email" placeholder="Email address">
+            <input type="password" id="password" placeholder="Password">
+            <button onclick="handleAuth('login')">Sign In</button>
+            <button class="secondary-btn" onclick="handleAuth('signup')">Create new account</button>
+        </div>
     </div>
 
     <div id="voice-screen" class="screen">
-        <img src="icon.svg" class="avatar">
-        <h2 id="greeting">Welcome back</h2>
-        <div id="mic-bars" class="pulse-container">
-            <div class="bar"></div><div class="bar"></div><div class="bar"></div>
-            <div class="bar"></div><div class="bar"></div>
+        <div class="avatar-container">
+            <div class="pulse-ring"></div>
+            <img src="icon-512.png" class="avatar" onerror="this.src='icon.svg'">
         </div>
-        <p id="status">Listening...</p>
-        <button class="secondary-btn" onclick="logout()" style="width: auto; padding: 5px 15px; font-size: 0.7rem;">LOGOUT</button>
+        <h2 id="greeting">Connecting...</h2>
+        <p id="status">Listening to your vibe</p>
+        <button class="secondary-btn" onclick="logout()">Logout</button>
     </div>
 
     <script>
-        const supabase = supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_KEY');
+        // REPLACE WITH YOUR ACTUAL KEYS
+        const supabase = supabase.createClient('YOUR_URL', 'YOUR_KEY');
         let deferredPrompt;
+
+        // --- SESSION LOGIC ---
+        supabase.auth.onAuthStateChange((event, session) => {
+            if (session) {
+                document.getElementById('auth-screen').classList.remove('active');
+                document.getElementById('voice-screen').classList.add('active');
+                document.getElementById('install-banner').style.display = 'none';
+            } else {
+                document.getElementById('voice-screen').classList.remove('active');
+                document.getElementById('auth-screen').classList.add('active');
+            }
+        });
+
+        async function handleAuth(type) {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            if(!email || !password) return;
+
+            const { error } = (type === 'signup') 
+                ? await supabase.auth.signUp({email, password})
+                : await supabase.auth.signInWithPassword({email, password});
+
+            if(error) alert(error.message);
+        }
+
+        async function logout() { await supabase.auth.signOut(); }
 
         // --- PWA INSTALL LOGIC ---
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            document.getElementById('install-area').style.display = 'block';
+            document.getElementById('install-banner').style.display = 'flex';
         });
 
         async function installApp() {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                if (outcome === 'accepted') document.getElementById('install-area').style.display = 'none';
-                deferredPrompt = null;
-            }
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            deferredPrompt = null;
+            document.getElementById('install-banner').style.display = 'none';
         }
-
-        // --- AUTH LOGIC ---
-        async function handleAuth(type) {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            if (!email || !password) return alert("Fill in the fields, homie.");
-
-            const { error } = (type === 'signup') 
-                ? await supabase.auth.signUp({ email, password })
-                : await supabase.auth.signInWithPassword({ email, password });
-
-            if (error) alert(error.message);
-            else if (type === 'signup') alert("Check your email to verify!");
-        }
-
-        async function logout() {
-            await supabase.auth.signOut();
-            showScreen('auth-screen');
-        }
-
-        // --- SESSION MANAGEMENT ---
-        function showScreen(id) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-        }
-
-        // AUTO-REDIRECT IF LOGGED IN
-        supabase.auth.onAuthStateChange((event, session) => {
-            if (session) {
-                showScreen('voice-screen');
-                document.getElementById('install-area').style.display = 'none'; // Hide install prompt once inside
-            } else {
-                showScreen('auth-screen');
-            }
-        });
 
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js');
