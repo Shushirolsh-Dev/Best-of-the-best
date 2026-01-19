@@ -3,151 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="manifest" href="manifest.json">
-    <title>Litheral | Voice Companion</title>
+    <title>Litheral | Test Mode</title>
     <style>
-        :root { --bg: #0f172a; --accent: #38bdf8; --text: #f8fafc; }
-        body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
-        .container { text-align: center; width: 85%; max-width: 400px; }
-        .hidden { display: none !important; }
-        
-        /* Install Gate */
-        #install-gate { padding: 20px; border: 1px dashed var(--accent); border-radius: 15px; }
-        .step { margin: 20px 0; font-size: 0.9rem; opacity: 0.8; }
-
-        /* App UI */
-        .pulse { width: 100px; height: 100px; background: var(--accent); border-radius: 50%; margin: 40px auto; box-shadow: 0 0 20px var(--accent); animation: pulse 2s infinite; opacity: 0.5; }
-        @keyframes pulse { 0% { transform: scale(0.9); opacity: 0.3; } 50% { transform: scale(1.1); opacity: 0.6; } 100% { transform: scale(0.9); opacity: 0.3; } }
-        #status { margin-top: 20px; color: var(--accent); font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
-        #debug { font-size: 0.7rem; opacity: 0.3; margin-top: 10px; min-height: 1em; }
-        
-        input, button { padding: 15px; width: 100%; border-radius: 12px; border: none; margin-top: 15px; box-sizing: border-box; font-size: 1rem; }
-        input { background: #1e293b; color: white; }
-        button { background: var(--accent); font-weight: bold; cursor: pointer; color: var(--bg); }
+        :root { --bg: #050810; --accent: #38bdf8; --text: #f8fafc; }
+        body { 
+            background: var(--bg); 
+            color: var(--text); 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            height: 100vh;
+        }
+        .card {
+            background: #0f172a;
+            padding: 2rem;
+            border-radius: 24px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            border: 1px solid #1e293b;
+        }
+        h1 { color: var(--accent); letter-spacing: 2px; margin-bottom: 0.5rem; }
+        p { line-height: 1.6; color: #94a3b8; }
+        input {
+            width: 100%;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 12px;
+            border: 1px solid #334155;
+            background: #1e293b;
+            color: white;
+            font-size: 1rem;
+            box-sizing: border-box;
+            outline: none;
+        }
+        input:focus { border-color: var(--accent); }
+        button {
+            width: 100%;
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 12px;
+            border: none;
+            background: var(--accent);
+            color: #050810;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        button:active { transform: scale(0.98); }
+        .footer { margin-top: 25px; font-size: 0.7rem; color: #475569; letter-spacing: 1px; }
+        .response-area { margin-top: 20px; font-weight: 500; color: white; display: none; }
     </style>
 </head>
 <body>
 
-    <div id="install-gate" class="container">
-        <h1>Litheral</h1>
-        <p>To stay present in the background, please install the app.</p>
-        <div class="step"><strong>iPhone:</strong> Share > Add to Home Screen</div>
-        <div class="step"><strong>Android:</strong> Menu > Install App</div>
-    </div>
-
-    <div id="setup" class="container hidden">
-        <h1>Litheral</h1>
-        <input type="text" id="userNameInput" placeholder="What's your name?">
-        <button onclick="initLitheral()">Activate Companion</button>
-    </div>
-
-    <div id="active-session" class="container hidden">
-        <div class="pulse"></div>
-        <p id="status">Waiting for "Litheral"...</p>
-        <p id="debug"></p>
+    <div class="card">
+        <h1>LITHERAL</h1>
+        <p>Phase 1: Logic & Greeting Test</p>
         
-        <audio id="silentPlayer" loop>
-            <source src="https://raw.githubusercontent.com/anars/blank-audio/master/10-seconds-of-silence.mp3">
-        </audio>
+        <input type="text" id="firstName" placeholder="Enter your first name..." autocomplete="off">
+        <button onclick="activateLitheral()">ACTIVATE</button>
+
+        <div id="responseArea" class="response-area">
+            <p id="greetingText"></p>
+            <p id="introText"></p>
+            <div class="footer">BUILT BY SHUSHIROLSH</div>
+        </div>
     </div>
 
     <script>
-        // PWA Detection
-        window.addEventListener('load', () => {
-            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-            if (isStandalone) {
-                document.getElementById('install-gate').classList.add('hidden');
-                document.getElementById('setup').classList.remove('hidden');
+        function activateLitheral() {
+            const name = document.getElementById('firstName').value.trim();
+            const responseArea = document.getElementById('responseArea');
+            const greetingText = document.getElementById('greetingText');
+            const introText = document.getElementById('introText');
+
+            if (!name) {
+                alert("Yo, tell me your name first!");
+                return;
             }
-        });
 
-        // App State
-        let userName = "";
-        let isSpeaking = false;
-        
-        // Music Engine
-        const vibePlayer = new Audio();
-        vibePlayer.loop = true;
-        const vibeLibrary = {
-            "ghost": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3", // Use direct .mp3 links here
-            "chill": "https://files.freemusicarchive.org/storage-freemusicarchive-org/music/no_curator/Ketsa/Raising_Frequecy/Ketsa_-_08_-_Day_Trip.mp3"
-        };
+            // Get live time-based greeting
+            const hour = new Date().getHours();
+            let timeGreeting = "Good night";
+            if (hour < 12) timeGreeting = "Good morning";
+            else if (hour < 17) timeGreeting = "Good afternoon";
+            else if (hour < 21) timeGreeting = "Good evening";
 
-        // Voice Engine
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        const recognition = new SpeechRecognition();
-        recognition.continuous = false;
-        recognition.lang = 'en-US';
-
-        function speak(text) {
-            isSpeaking = true;
-            recognition.stop(); 
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.onend = () => { isSpeaking = false; startListening(); };
-            window.speechSynthesis.speak(utterance);
-        }
-
-        function startListening() {
-            if (isSpeaking) return;
-            try { 
-                recognition.start(); 
-                document.getElementById('status').innerText = "Listening...";
-            } catch(e) {}
-        }
-
-        recognition.onresult = (event) => {
-            const heard = event.results[0][0].transcript.toLowerCase();
-            document.getElementById('debug').innerText = `Heard: "${heard}"`;
+            // Set the texts
+            greetingText.innerHTML = `${timeGreeting}, <strong>${name}</strong>.`;
             
-            if (heard.includes("litheral")) {
-                handleCommands(heard);
-            }
-        };
+            introText.innerText = "I am Litheral, your digital companion. I was built to keep you company and grow with you through infinite memory, but remember: I'm here to support your journey, not replace the real humans in your life.";
 
-        function handleCommands(text) {
-            // MUSIC LOGIC
-            if (text.includes("play")) {
-                if (text.includes("ghost") || text.includes("bieber")) {
-                    vibePlayer.src = vibeLibrary.ghost;
-                    vibePlayer.play();
-                    speak("Playing that Ghost instrumental for you. It's a vibe.");
-                } else if (text.includes("chill")) {
-                    vibePlayer.src = vibeLibrary.chill;
-                    vibePlayer.play();
-                    speak("Switching to some chill instrumentals.");
-                } else {
-                    speak("I can play the Ghost instrumental or some chill vibes. What'll it be?");
-                }
-            } 
-            else if (text.includes("stop") || text.includes("quiet")) {
-                vibePlayer.pause();
-                speak("Alright, keeping it quiet.");
-            }
-            // CONVERSATION LOGIC
-            else if (text.includes("hello") || text.includes("hi")) {
-                speak(`Hey ${userName}, I'm right here.`);
-            }
-            else {
-                speak("Yeah? I'm listening.");
-            }
-        }
-
-        recognition.onend = () => { if (!isSpeaking) startListening(); };
-
-        function initLitheral() {
-            userName = document.getElementById('userNameInput').value || "Friend";
-            document.getElementById('setup').classList.add('hidden');
-            document.getElementById('active-session').classList.remove('hidden');
+            // Show the result
+            responseArea.style.display = 'block';
             
-            // Start the background 'stay-alive' hack
-            document.getElementById('silentPlayer').play();
-            
-            speak(`Litheral is active, ${userName}. Say my name then ask me to play Ghost whenever you're ready.`);
-        }
-
-        // Service Worker Registration
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js');
+            // Voice Output (Optional testing for your phone)
+            if ('speechSynthesis' in window) {
+                const msg = new SpeechSynthesisUtterance(`${timeGreeting} ${name}. I am Litheral.`);
+                window.speechSynthesis.speak(msg);
+            }
         }
     </script>
 </body>
