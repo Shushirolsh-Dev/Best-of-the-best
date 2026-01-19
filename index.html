@@ -26,30 +26,60 @@
             background: radial-gradient(circle at center, #1e293b 0%, #050810 100%);
         }
 
-        .logo-box { width: 80px; height: 80px; margin-bottom: 20px; }
+        /* Mic/Logo Animation */
+        .logo-box { 
+            width: 100px; height: 100px; margin-bottom: 20px; 
+            filter: drop-shadow(0 0 15px rgba(56, 189, 248, 0.4));
+            animation: float 3s ease-in-out infinite, glow 3s ease-in-out infinite;
+        }
 
-        h1 { font-size: 3rem; font-weight: 900; color: var(--accent); letter-spacing: -2px; }
-        .tagline { font-size: 1.2rem; color: #94a3b8; max-width: 300px; margin: 15px 0 30px; }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        @keyframes glow {
+            0%, 100% { filter: drop-shadow(0 0 15px rgba(56, 189, 248, 0.4)); }
+            50% { filter: drop-shadow(0 0 30px rgba(56, 189, 248, 0.8)); }
+        }
+
+        h1 { font-size: 3.5rem; font-weight: 900; color: var(--accent); letter-spacing: -2px; margin-bottom: 5px;}
+        .tagline { font-size: 1.1rem; color: #94a3b8; max-width: 320px; margin: 10px 0 35px; }
 
         /* Buttons */
         .cta-container { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 300px; }
         
         .btn {
             padding: 18px; border-radius: 16px; border: none; font-weight: 700;
-            font-size: 1rem; cursor: pointer; transition: 0.3s; text-decoration: none;
-            display: flex; align-items: center; justify-content: center;
+            font-size: 1rem; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex; align-items: center; justify-content: center; text-decoration: none;
         }
 
         .btn-primary { background: var(--accent); color: #050810; box-shadow: 0 10px 20px rgba(56, 189, 248, 0.2); }
+        .btn-primary:hover { transform: scale(1.03); background: #7dd3fc; }
+
         .btn-secondary { background: var(--glass); color: white; border: 1px solid rgba(255, 255, 255, 0.1); }
-        
-        /* Install Button (Hidden by default) */
-        #pwa-install-btn { display: none; background: #f8fafc; color: #050810; margin-top: 20px; }
+
+        /* Install Button - Visible by default for this version, but logic controls it */
+        #pwa-install-btn { 
+            background: #ffffff; 
+            color: #050810; 
+            margin-bottom: 10px;
+            display: none; /* Initially hidden until PWA is ready */
+            border: 2px solid var(--accent);
+            animation: pulse-button 2s infinite;
+        }
+
+        @keyframes pulse-button {
+            0% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(56, 189, 248, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); }
+        }
 
         /* Features */
-        .features { padding: 40px 20px; display: grid; gap: 20px; }
-        .card { background: var(--glass); padding: 20px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); }
-        .card h3 { color: var(--accent); margin-bottom: 10px; }
+        .features { padding: 60px 20px; display: grid; gap: 20px; background: #050810; }
+        .card { background: var(--glass); padding: 25px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); }
+        .card h3 { color: var(--accent); margin-bottom: 10px; font-size: 1.3rem; }
     </style>
 </head>
 <body>
@@ -65,7 +95,7 @@
             </button>
 
             <a href="auth.html" class="btn btn-primary">GET STARTED</a>
-            <a href="#features" class="btn btn-secondary">LEARN MORE</a>
+            <a href="#features" class="btn btn-secondary">HOW IT WORKS</a>
         </div>
     </section>
 
@@ -84,19 +114,21 @@
         const supabase = supabase.createClient('YOUR_URL', 'YOUR_KEY');
         let deferredPrompt;
 
-        // 1. SESSION CHECK: If logged in, skip this page immediately
+        // 1. SESSION CHECK
         supabase.auth.onAuthStateChange((event, session) => {
             if (session) {
-                window.location.href = 'app.html'; // Direct to the voice/chat interface
+                window.location.href = 'app.html';
             }
         });
 
-        // 2. PWA INSTALL LOGIC (Crucial for removing badge)
+        // 2. PWA INSTALL LOGIC
+        const installBtn = document.getElementById('pwa-install-btn');
+
         window.addEventListener('beforeinstallprompt', (e) => {
+            console.log('PWA Ready to install');
             e.preventDefault();
             deferredPrompt = e;
-            // Show the custom install button on the page
-            document.getElementById('pwa-install-btn').style.display = 'flex';
+            installBtn.style.display = 'flex'; // Show button when ready
         });
 
         async function triggerInstall() {
@@ -104,10 +136,16 @@
             deferredPrompt.prompt();
             const { outcome } = await deferredPrompt.userChoice;
             if (outcome === 'accepted') {
-                document.getElementById('pwa-install-btn').style.display = 'none';
+                installBtn.style.display = 'none';
             }
             deferredPrompt = null;
         }
+
+        // Hide button if app is already installed
+        window.addEventListener('appinstalled', () => {
+            installBtn.style.display = 'none';
+            console.log('Litheral installed successfully');
+        });
 
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js');
