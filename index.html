@@ -3,131 +3,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="manifest.json">
     <title>Litheral | Voice Companion</title>
     <style>
         :root { --bg: #0f172a; --accent: #38bdf8; --text: #f8fafc; }
-        body { 
-            background: var(--bg); color: var(--text); 
-            font-family: sans-serif; display: flex; 
-            align-items: center; justify-content: center; 
-            height: 100vh; margin: 0;
-        }
+        body { background: var(--bg); color: var(--text); font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
         .container { text-align: center; width: 80%; max-width: 400px; }
         .hidden { display: none; }
-        .pulse-wrapper { position: relative; width: 120px; height: 120px; margin: auto; }
-        .pulse {
-            position: absolute; width: 100%; height: 100%;
-            background: var(--accent); border-radius: 50%;
-            box-shadow: 0 0 30px var(--accent);
-            animation: pulse-anim 3s infinite ease-in-out;
-            opacity: 0.4;
-        }
-        @keyframes pulse-anim {
-            0%, 100% { transform: scale(0.8); opacity: 0.2; }
-            50% { transform: scale(1.1); opacity: 0.5; }
-        }
-        #status { margin-top: 20px; font-size: 0.8rem; letter-spacing: 1px; color: var(--accent); }
-        input { padding: 12px; border-radius: 8px; border: none; width: 100%; margin-bottom: 10px; }
-        button { padding: 12px; width: 100%; background: var(--accent); border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .pulse { width: 100px; height: 100px; background: var(--accent); border-radius: 50%; margin: auto; box-shadow: 0 0 20px var(--accent); animation: pulse 2s infinite; opacity: 0.5; }
+        @keyframes pulse { 0% { transform: scale(0.9); opacity: 0.3; } 50% { transform: scale(1.1); opacity: 0.6; } 100% { transform: scale(0.9); opacity: 0.3; } }
+        #status { margin-top: 20px; color: var(--accent); font-weight: bold; }
+        input, button { padding: 12px; width: 100%; border-radius: 8px; border: none; margin-top: 10px; }
+        button { background: var(--accent); font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
 
     <div id="setup" class="container">
         <h1>LITHERAL</h1>
-        <input type="text" id="userNameInput" placeholder="Your name (spelled)">
-        <button onclick="initLitheral()">Activate</button>
+        <input type="text" id="userNameInput" placeholder="Enter name...">
+        <button onclick="initLitheral()">Activate PWA</button>
     </div>
 
     <div id="active-session" class="container hidden">
-        <div class="pulse-wrapper"><div class="pulse" id="visualizer"></div></div>
-        <p id="status">WAITING FOR WAKE WORD...</p>
-        <p style="font-size: 0.7rem; opacity: 0.4;">Try saying: "Litheral, are you there?"</p>
-        <audio id="silentPlayer" loop><source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg"></audio>
+        <div class="pulse"></div>
+        <p id="status">Waiting...</p>
+        <p id="debug" style="font-size: 0.6rem; opacity: 0.3;"></p>
+        <audio id="silentPlayer" loop><source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"></audio>
     </div>
 
     <script>
-        let userName = "";
-        let phoneticName = "";
-        let isOnboarding = true;
-        let isSpeaking = false;
+        // 1. PWA REGISTRATION & FORCE REFRESH
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').then(reg => {
+                reg.onupdatefound = () => {
+                    const installingWorker = reg.installing;
+                    installingWorker.onstatechange = () => {
+                        if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            // New update found! Reload the page to apply it
+                            window.location.reload();
+                        }
+                    };
+                };
+            });
+        }
 
+        // 2. VOICE LOGIC
+        let userName = "";
+        let isSpeaking = false;
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         const recognition = new SpeechRecognition();
-        
-        recognition.continuous = true; // Stay on to hear the wake word
-        recognition.interimResults = false;
+        recognition.continuous = false; 
         recognition.lang = 'en-US';
 
-        function speak(text, callback) {
+        function speak(text) {
             isSpeaking = true;
-            recognition.stop(); // HARD MUTE: Stop listening so it doesn't hear itself
-            
+            recognition.stop(); 
             const utterance = new SpeechSynthesisUtterance(text);
-            utterance.rate = 0.95;
-            
-            utterance.onend = () => {
-                isSpeaking = false;
-                startListening(); // Re-open mic ONLY after finishing speech
-                if (callback) callback();
-            };
+            utterance.onend = () => { isSpeaking = false; startListening(); };
             window.speechSynthesis.speak(utterance);
         }
 
-        function initLitheral() {
-            userName = document.getElementById('userNameInput').value;
-            if(!userName) return;
-            document.getElementById('setup').classList.add('hidden');
-            document.getElementById('active-session').classList.remove('hidden');
-            
-            const audio = document.getElementById('silentPlayer');
-            audio.volume = 0.01; audio.play();
-
-            speak(`Hey ${userName}. I'm listening. Call my name if you need me.`);
-            isOnboarding = false;
-        }
-
         function startListening() {
-            if (isSpeaking) return; 
-            try { recognition.start(); } catch(e) {}
-            document.getElementById('status').innerText = "LISTENING FOR 'LITHERAL'...";
-            document.getElementById('visualizer').style.animationPlayState = "running";
+            if (isSpeaking) return;
+            try { 
+                recognition.start(); 
+                document.getElementById('status').innerText = "Listening for 'Litheral'...";
+            } catch(e) {}
         }
 
         recognition.onresult = (event) => {
-            const result = event.results[event.results.length - 1][0].transcript.toLowerCase();
-            console.log("Heard:", result);
-
-            // WAKE WORD LOGIC
-            if (result.includes("litheral")) {
-                handleResponse(result);
+            const heard = event.results[0][0].transcript.toLowerCase();
+            document.getElementById('debug').innerText = "Last heard: " + heard;
+            if (heard.includes("litheral")) {
+                if (heard.includes("hello") || heard.includes("hi")) speak("Hey " + userName + ", I'm here.");
+                else if (heard.includes("how are you")) speak("I'm vibing in your pocket. You good?");
+                else speak("Yeah? I'm listening.");
             }
         };
 
-        recognition.onend = () => {
-            // If the browser kills the mic, we auto-restart it unless we are speaking
-            if (!isSpeaking) startListening();
-        };
+        recognition.onend = () => { if (!isSpeaking) startListening(); };
 
-        function handleResponse(text) {
-            // Example response logic
-            if (text.includes("you there") || text.includes("hello")) {
-                speak(`I'm right here, ${userName}. Always present.`);
-            } 
-            else if (text.includes("how are you")) {
-                speak(`I'm vibing in the background. Just glad to be hanging out with you.`);
-            }
-            else if (text.includes("who am i")) {
-                speak(`You're ${userName}, my favorite human.`);
-            }
-            else {
-                speak(`I heard you say my name. What's up?`);
-            }
+        function initLitheral() {
+            userName = document.getElementById('userNameInput').value || "User";
+            document.getElementById('setup').style.display = 'none';
+            document.getElementById('active-session').classList.remove('hidden');
+            document.getElementById('silentPlayer').play();
+            speak("Litheral activated. I'm in the background now.");
         }
-
-        // Keep the listener alive if it drops
-        setInterval(() => { if(!isSpeaking) startListening(); }, 5000);
-
     </script>
 </body>
 </html>
