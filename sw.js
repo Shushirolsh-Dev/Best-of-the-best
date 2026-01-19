@@ -2,44 +2,35 @@ const CACHE_NAME = 'litheral-v1';
 const ASSETS = [
   '/',
   '/index.html',
+  '/auth.html',
   '/manifest.json',
-  '/icon.svg'
+  '/icon.svg',
+  '/IMG_20260120_001022_124.png'
 ];
 
-// 1. Install Service Worker & Cache Assets
+// Install & Cache
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('Caching app shell...');
       return cache.addAll(ASSETS);
     })
   );
-  // Force the waiting service worker to become the active service worker
   self.skipWaiting();
 });
 
-// 2. Activate Service Worker & Clean Old Caches
+// Activate & Clean
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cache) => {
-          if (cache !== CACHE_NAME) {
-            console.log('Clearing old cache...');
-            return caches.delete(cache);
-          }
-        })
-      );
+    caches.keys().then((keys) => {
+      return Promise.all(keys.map((k) => k !== CACHE_NAME && caches.delete(k)));
     })
   );
   return self.clients.claim();
 });
 
-// 3. Fetch Strategy: Network first, fallback to Cache
+// Fetch Logic
 self.addEventListener('fetch', (event) => {
   event.respondWith(
-    fetch(event.request).catch(() => {
-      return caches.match(event.request);
-    })
+    fetch(event.request).catch(() => caches.match(event.request))
   );
 });
