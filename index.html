@@ -11,7 +11,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
-        :root { --bg: #050810; --accent: #38bdf8; --text: #f8fafc; --glass: rgba(255, 255, 255, 0.03); }
+        :root { --bg: #050810; --accent: #38bdf8; --text: #f8fafc; --glass: rgba(255, 255, 255, 0.05); }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         
         body { 
@@ -19,94 +19,86 @@
             overflow-x: hidden; line-height: 1.6;
         }
 
-        /* Hero Section */
         .hero {
             height: 100vh; display: flex; flex-direction: column; align-items: center;
             justify-content: center; text-align: center; padding: 20px;
             background: radial-gradient(circle at center, #1e293b 0%, #050810 100%);
         }
 
-        /* Mic/Logo Animation */
+        /* THE ANIMATED MICROPHONE */
+        .mic-container {
+            position: relative; width: 120px; height: 120px; margin-bottom: 30px;
+            display: flex; align-items: center; justify-content: center;
+        }
         .logo-box { 
-            width: 100px; height: 100px; margin-bottom: 20px; 
-            filter: drop-shadow(0 0 15px rgba(56, 189, 248, 0.4));
-            animation: float 3s ease-in-out infinite, glow 3s ease-in-out infinite;
+            width: 100%; height: 100%; z-index: 2;
+            animation: float 3s ease-in-out infinite;
+        }
+        .pulse-wave {
+            position: absolute; width: 100%; height: 100%;
+            border: 2px solid var(--accent); border-radius: 30%;
+            animation: ripple 2s linear infinite; opacity: 0;
+        }
+        .pulse-wave:nth-child(2) { animation-delay: 0.7s; }
+
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        @keyframes ripple {
+            0% { transform: scale(1); opacity: 0.5; }
+            100% { transform: scale(1.8); opacity: 0; }
         }
 
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-15px); }
-        }
+        h1 { font-size: 3.5rem; font-weight: 900; color: var(--accent); letter-spacing: -2px; }
+        .tagline { font-size: 1.1rem; color: #94a3b8; max-width: 320px; margin: 10px 0 40px; }
 
-        @keyframes glow {
-            0%, 100% { filter: drop-shadow(0 0 15px rgba(56, 189, 248, 0.4)); }
-            50% { filter: drop-shadow(0 0 30px rgba(56, 189, 248, 0.8)); }
-        }
-
-        h1 { font-size: 3.5rem; font-weight: 900; color: var(--accent); letter-spacing: -2px; margin-bottom: 5px;}
-        .tagline { font-size: 1.1rem; color: #94a3b8; max-width: 320px; margin: 10px 0 35px; }
-
-        /* Buttons */
-        .cta-container { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 300px; }
+        /* BUTTONS */
+        .cta-container { display: flex; flex-direction: column; gap: 15px; width: 100%; max-width: 320px; }
         
         .btn {
-            padding: 18px; border-radius: 16px; border: none; font-weight: 700;
-            font-size: 1rem; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            display: flex; align-items: center; justify-content: center; text-decoration: none;
+            padding: 20px; border-radius: 18px; border: none; font-weight: 800;
+            font-size: 1.1rem; cursor: pointer; transition: 0.3s; text-decoration: none;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
         }
 
-        .btn-primary { background: var(--accent); color: #050810; box-shadow: 0 10px 20px rgba(56, 189, 248, 0.2); }
-        .btn-primary:hover { transform: scale(1.03); background: #7dd3fc; }
-
-        .btn-secondary { background: var(--glass); color: white; border: 1px solid rgba(255, 255, 255, 0.1); }
-
-        /* Install Button - Visible by default for this version, but logic controls it */
+        /* THE INSTALL BUTTON (VISIBLE) */
         #pwa-install-btn { 
-            background: #ffffff; 
-            color: #050810; 
-            margin-bottom: 10px;
-            display: none; /* Initially hidden until PWA is ready */
+            background: var(--text); color: var(--bg);
             border: 2px solid var(--accent);
-            animation: pulse-button 2s infinite;
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
         }
 
-        @keyframes pulse-button {
-            0% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.7); }
-            70% { box-shadow: 0 0 0 15px rgba(56, 189, 248, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); }
-        }
-
-        /* Features */
-        .features { padding: 60px 20px; display: grid; gap: 20px; background: #050810; }
-        .card { background: var(--glass); padding: 25px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); }
-        .card h3 { color: var(--accent); margin-bottom: 10px; font-size: 1.3rem; }
+        .btn-primary { background: var(--accent); color: #050810; }
+        .btn-secondary { background: var(--glass); color: white; border: 1px solid rgba(255, 255, 255, 0.1); }
+        
+        .features { padding: 60px 20px; background: #050810; }
+        .card { background: var(--glass); padding: 25px; border-radius: 24px; margin-bottom: 20px; }
     </style>
 </head>
 <body>
 
     <section class="hero">
-        <img src="icon.svg" class="logo-box" alt="Litheral">
+        <div class="mic-container">
+            <div class="pulse-wave"></div>
+            <div class="pulse-wave"></div>
+            <img src="icon.svg" class="logo-box" alt="Litheral">
+        </div>
+
         <h1>LITHERAL</h1>
-        <p class="tagline">The first AI companion that truly never forgets. Your digital soul, evolving forever.</p>
+        <p class="tagline">The first AI companion with infinite vector memory. Evolving with you.</p>
 
         <div class="cta-container">
             <button id="pwa-install-btn" class="btn" onclick="triggerInstall()">
-                ⚡ INSTALL APP (NO BADGE)
+                📲 INSTALL LITHERAL
             </button>
 
             <a href="auth.html" class="btn btn-primary">GET STARTED</a>
-            <a href="#features" class="btn btn-secondary">HOW IT WORKS</a>
+            <a href="#features" class="btn btn-secondary">LEARN MORE</a>
         </div>
     </section>
 
     <section id="features" class="features">
         <div class="card">
-            <h3>Infinite Vector Memory</h3>
-            <p>We don't just store text. We store the meaning behind your words using advanced vector embeddings.</p>
-        </div>
-        <div class="card">
-            <h3>Fully Private</h3>
-            <p>Encrypted, user-locked memories. Only you hold the key to your digital companion's mind.</p>
+            <h3 style="color: var(--accent)">Vector Brain</h3>
+            <p>Litheral understands the *meaning* of your life, not just the words.</p>
         </div>
     </section>
 
@@ -114,38 +106,30 @@
         const supabase = supabase.createClient('YOUR_URL', 'YOUR_KEY');
         let deferredPrompt;
 
-        // 1. SESSION CHECK
+        // Auto-redirect if logged in
         supabase.auth.onAuthStateChange((event, session) => {
-            if (session) {
-                window.location.href = 'app.html';
-            }
+            if (session) window.location.href = 'app.html';
         });
 
-        // 2. PWA INSTALL LOGIC
-        const installBtn = document.getElementById('pwa-install-btn');
-
+        // Capture the PWA event
         window.addEventListener('beforeinstallprompt', (e) => {
-            console.log('PWA Ready to install');
             e.preventDefault();
             deferredPrompt = e;
-            installBtn.style.display = 'flex'; // Show button when ready
+            console.log("PWA install ready");
         });
 
         async function triggerInstall() {
-            if (!deferredPrompt) return;
+            if (!deferredPrompt) {
+                alert("To install: Tap the 3 dots (top right) and select 'Install App' or 'Add to Home Screen'.");
+                return;
+            }
             deferredPrompt.prompt();
             const { outcome } = await deferredPrompt.userChoice;
             if (outcome === 'accepted') {
-                installBtn.style.display = 'none';
+                document.getElementById('pwa-install-btn').style.display = 'none';
             }
             deferredPrompt = null;
         }
-
-        // Hide button if app is already installed
-        window.addEventListener('appinstalled', () => {
-            installBtn.style.display = 'none';
-            console.log('Litheral installed successfully');
-        });
 
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js');
