@@ -3,158 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Litheral</title>
+    <title>Litheral | Infinite Memory AI</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#050810">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    
-    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-    <link rel="apple-touch-icon" href="icon-192.png">
-
+    <link rel="icon" type="image/png" href="icon-192.png">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
-        :root { --bg: #050810; --card: #111827; --accent: #38bdf8; --text: #f8fafc; }
-        
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        :root { --bg: #050810; --accent: #38bdf8; --text: #f8fafc; --glass: rgba(255, 255, 255, 0.03); }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         
         body { 
-            background: var(--bg); color: var(--text); 
-            font-family: 'Inter', -apple-system, sans-serif;
-            margin: 0; display: flex; align-items: center; justify-content: center; 
-            height: 100vh; overflow: hidden;
-            background-image: radial-gradient(circle at top right, #1e293b, #050810);
+            background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif;
+            overflow-x: hidden; line-height: 1.6;
         }
 
-        .screen { 
-            width: 100%; max-width: 400px; padding: 40px 25px; 
-            text-align: center; display: none;
-            animation: fadeIn 0.4s ease;
-        }
-        .active { display: block; }
-
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        .glass-card {
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 24px;
-            padding: 30px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        /* Hero Section */
+        .hero {
+            height: 100vh; display: flex; flex-direction: column; align-items: center;
+            justify-content: center; text-align: center; padding: 20px;
+            background: radial-gradient(circle at center, #1e293b 0%, #050810 100%);
         }
 
-        h1 { font-size: 2.5rem; font-weight: 800; letter-spacing: -1px; margin-bottom: 10px; color: var(--accent); }
-        p { color: #94a3b8; margin-bottom: 30px; font-size: 0.95rem; }
+        .logo-box { width: 80px; height: 80px; margin-bottom: 20px; }
 
-        input {
-            width: 100%; padding: 16px; margin-bottom: 12px; border-radius: 12px;
-            border: 1px solid #334155; background: rgba(15, 23, 42, 0.6); color: white;
-            font-size: 1rem; outline: none; transition: 0.2s;
-        }
-        input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2); }
+        h1 { font-size: 3rem; font-weight: 900; color: var(--accent); letter-spacing: -2px; }
+        .tagline { font-size: 1.2rem; color: #94a3b8; max-width: 300px; margin: 15px 0 30px; }
 
-        button {
-            width: 100%; padding: 16px; border-radius: 12px; border: none;
-            background: var(--accent); color: #0f172a; font-weight: 700;
-            font-size: 1rem; cursor: pointer; transition: 0.2s;
-        }
-        button:active { transform: scale(0.98); }
-
-        .secondary-btn { background: transparent; color: var(--accent); margin-top: 10px; font-weight: 500; }
-
-        /* Install Prompt */
-        #install-banner {
-            position: fixed; bottom: 20px; left: 20px; right: 20px;
-            background: var(--accent); color: #0f172a; padding: 15px;
-            border-radius: 16px; display: none; font-weight: 600;
-            justify-content: space-between; align-items: center; z-index: 100;
+        /* Buttons */
+        .cta-container { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 300px; }
+        
+        .btn {
+            padding: 18px; border-radius: 16px; border: none; font-weight: 700;
+            font-size: 1rem; cursor: pointer; transition: 0.3s; text-decoration: none;
+            display: flex; align-items: center; justify-content: center;
         }
 
-        /* Voice Avatar */
-        .avatar-container { position: relative; width: 150px; height: 150px; margin: 0 auto 30px; }
-        .avatar { width: 100%; height: 100%; border-radius: 50%; border: 4px solid var(--accent); }
-        .pulse-ring {
-            position: absolute; width: 100%; height: 100%; border: 4px solid var(--accent);
-            border-radius: 50%; animation: ring-pulse 2s infinite;
-        }
-        @keyframes ring-pulse { 0% { transform: scale(1); opacity: 0.5; } 100% { transform: scale(1.5); opacity: 0; } }
+        .btn-primary { background: var(--accent); color: #050810; box-shadow: 0 10px 20px rgba(56, 189, 248, 0.2); }
+        .btn-secondary { background: var(--glass); color: white; border: 1px solid rgba(255, 255, 255, 0.1); }
+        
+        /* Install Button (Hidden by default) */
+        #pwa-install-btn { display: none; background: #f8fafc; color: #050810; margin-top: 20px; }
+
+        /* Features */
+        .features { padding: 40px 20px; display: grid; gap: 20px; }
+        .card { background: var(--glass); padding: 20px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); }
+        .card h3 { color: var(--accent); margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
-    <div id="install-banner">
-        <span>Install Litheral App</span>
-        <button onclick="installApp()" style="width: auto; padding: 8px 15px; font-size: 0.8rem;">INSTALL</button>
-    </div>
+    <section class="hero">
+        <img src="icon.svg" class="logo-box" alt="Litheral">
+        <h1>LITHERAL</h1>
+        <p class="tagline">The first AI companion that truly never forgets. Your digital soul, evolving forever.</p>
 
-    <div id="auth-screen" class="screen active">
-        <div class="glass-card">
-            <h1>Litheral</h1>
-            <p>Your digital soul awaits.</p>
-            <input type="email" id="email" placeholder="Email address">
-            <input type="password" id="password" placeholder="Password">
-            <button onclick="handleAuth('login')">Sign In</button>
-            <button class="secondary-btn" onclick="handleAuth('signup')">Create new account</button>
-        </div>
-    </div>
+        <div class="cta-container">
+            <button id="pwa-install-btn" class="btn" onclick="triggerInstall()">
+                ⚡ INSTALL APP (NO BADGE)
+            </button>
 
-    <div id="voice-screen" class="screen">
-        <div class="avatar-container">
-            <div class="pulse-ring"></div>
-            <img src="icon-512.png" class="avatar" onerror="this.src='icon.svg'">
+            <a href="auth.html" class="btn btn-primary">GET STARTED</a>
+            <a href="#features" class="btn btn-secondary">LEARN MORE</a>
         </div>
-        <h2 id="greeting">Connecting...</h2>
-        <p id="status">Listening to your vibe</p>
-        <button class="secondary-btn" onclick="logout()">Logout</button>
-    </div>
+    </section>
+
+    <section id="features" class="features">
+        <div class="card">
+            <h3>Infinite Vector Memory</h3>
+            <p>We don't just store text. We store the meaning behind your words using advanced vector embeddings.</p>
+        </div>
+        <div class="card">
+            <h3>Fully Private</h3>
+            <p>Encrypted, user-locked memories. Only you hold the key to your digital companion's mind.</p>
+        </div>
+    </section>
 
     <script>
-        // REPLACE WITH YOUR ACTUAL KEYS
         const supabase = supabase.createClient('YOUR_URL', 'YOUR_KEY');
         let deferredPrompt;
 
-        // --- SESSION LOGIC ---
+        // 1. SESSION CHECK: If logged in, skip this page immediately
         supabase.auth.onAuthStateChange((event, session) => {
             if (session) {
-                document.getElementById('auth-screen').classList.remove('active');
-                document.getElementById('voice-screen').classList.add('active');
-                document.getElementById('install-banner').style.display = 'none';
-            } else {
-                document.getElementById('voice-screen').classList.remove('active');
-                document.getElementById('auth-screen').classList.add('active');
+                window.location.href = 'app.html'; // Direct to the voice/chat interface
             }
         });
 
-        async function handleAuth(type) {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            if(!email || !password) return;
-
-            const { error } = (type === 'signup') 
-                ? await supabase.auth.signUp({email, password})
-                : await supabase.auth.signInWithPassword({email, password});
-
-            if(error) alert(error.message);
-        }
-
-        async function logout() { await supabase.auth.signOut(); }
-
-        // --- PWA INSTALL LOGIC ---
+        // 2. PWA INSTALL LOGIC (Crucial for removing badge)
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            document.getElementById('install-banner').style.display = 'flex';
+            // Show the custom install button on the page
+            document.getElementById('pwa-install-btn').style.display = 'flex';
         });
 
-        async function installApp() {
+        async function triggerInstall() {
             if (!deferredPrompt) return;
             deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') {
+                document.getElementById('pwa-install-btn').style.display = 'none';
+            }
             deferredPrompt = null;
-            document.getElementById('install-banner').style.display = 'none';
         }
 
         if ('serviceWorker' in navigator) {
