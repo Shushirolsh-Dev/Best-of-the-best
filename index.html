@@ -2,111 +2,134 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Litheral | Test Mode</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Litheral</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#050810">
+    <link rel="apple-touch-icon" href="icon.svg">
+
     <style>
         :root { --bg: #050810; --accent: #38bdf8; --text: #f8fafc; }
         body { 
             background: var(--bg); 
             color: var(--text); 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            margin: 0; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            height: 100vh;
+            font-family: -apple-system, sans-serif;
+            margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh;
+            overflow: hidden;
         }
-        .card {
-            background: #0f172a;
-            padding: 2rem;
-            border-radius: 24px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            width: 90%;
-            max-width: 400px;
-            text-align: center;
-            border: 1px solid #1e293b;
+
+        .screen { 
+            text-align: center; width: 90%; max-width: 400px; 
+            transition: opacity 0.5s ease;
         }
-        h1 { color: var(--accent); letter-spacing: 2px; margin-bottom: 0.5rem; }
-        p { line-height: 1.6; color: #94a3b8; }
+        .hidden { display: none; opacity: 0; }
+
+        /* INPUT SCREEN STYLES */
+        h1 { color: var(--accent); letter-spacing: 2px; }
         input {
-            width: 100%;
-            padding: 15px;
-            margin-top: 20px;
-            border-radius: 12px;
-            border: 1px solid #334155;
-            background: #1e293b;
-            color: white;
-            font-size: 1rem;
-            box-sizing: border-box;
-            outline: none;
+            width: 100%; padding: 18px; margin-top: 20px; border-radius: 15px;
+            border: 1px solid #334155; background: #1e293b; color: white;
+            font-size: 1rem; box-sizing: border-box;
         }
-        input:focus { border-color: var(--accent); }
         button {
-            width: 100%;
-            padding: 15px;
-            margin-top: 15px;
-            border-radius: 12px;
-            border: none;
-            background: var(--accent);
-            color: #050810;
-            font-weight: bold;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: transform 0.2s;
+            width: 100%; padding: 18px; margin-top: 15px; border-radius: 15px;
+            border: none; background: var(--accent); color: #050810;
+            font-weight: bold; font-size: 1rem; cursor: pointer;
         }
-        button:active { transform: scale(0.98); }
-        .footer { margin-top: 25px; font-size: 0.7rem; color: #475569; letter-spacing: 1px; }
-        .response-area { margin-top: 20px; font-weight: 500; color: white; display: none; }
+
+        /* VOICE SCREEN STYLES */
+        .avatar {
+            width: 120px; height: 120px;
+            margin-bottom: 30px;
+            border-radius: 50%;
+            border: 3px solid var(--accent);
+        }
+
+        /* MIC PULSE ANIMATION */
+        .pulse-container {
+            display: flex; align-items: center; justify-content: center; height: 60px; gap: 5px;
+        }
+        .bar { width: 6px; height: 15px; background: var(--accent); border-radius: 3px; }
+        .talking .bar { animation: pulse 0.6s infinite ease-in-out; }
+
+        @keyframes pulse {
+            0%, 100% { height: 15px; }
+            50% { height: 50px; }
+        }
+
+        .bar:nth-child(2) { animation-delay: 0.1s; }
+        .bar:nth-child(3) { animation-delay: 0.2s; }
+        .bar:nth-child(4) { animation-delay: 0.3s; }
+
+        .footer { position: fixed; bottom: 20px; font-size: 0.7rem; opacity: 0.4; letter-spacing: 2px; }
     </style>
 </head>
 <body>
 
-    <div class="card">
+    <div id="setup-screen" class="screen">
         <h1>LITHERAL</h1>
-        <p>Phase 1: Logic & Greeting Test</p>
-        
-        <input type="text" id="firstName" placeholder="Enter your first name..." autocomplete="off">
-        <button onclick="activateLitheral()">ACTIVATE</button>
+        <p>Enter your name to begin</p>
+        <input type="text" id="userName" placeholder="Your Name" autocomplete="off">
+        <button onclick="activate()">ACTIVATE</button>
+    </div>
 
-        <div id="responseArea" class="response-area">
-            <p id="greetingText"></p>
-            <p id="introText"></p>
-            <div class="footer">BUILT BY SHUSHIROLSH</div>
+    <div id="voice-screen" class="screen hidden">
+        <img src="icon.svg" alt="Litheral" class="avatar">
+        <div id="mic-bars" class="pulse-container">
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
         </div>
+        <p id="status">Litheral is speaking...</p>
+        <div class="footer">BUILT BY SHUSHIROLSH</div>
     </div>
 
     <script>
-        function activateLitheral() {
-            const name = document.getElementById('firstName').value.trim();
-            const responseArea = document.getElementById('responseArea');
-            const greetingText = document.getElementById('greetingText');
-            const introText = document.getElementById('introText');
+        // 1. PWA Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
 
-            if (!name) {
-                alert("Yo, tell me your name first!");
-                return;
-            }
+        function activate() {
+            const name = document.getElementById('userName').value.trim();
+            if (!name) return alert("I need your name, homie.");
 
-            // Get live time-based greeting
+            // Switch Screens
+            document.getElementById('setup-screen').classList.add('hidden');
+            const voiceScreen = document.getElementById('voice-screen');
+            voiceScreen.classList.remove('hidden');
+
+            // Logic for Greeting
             const hour = new Date().getHours();
-            let timeGreeting = "Good night";
-            if (hour < 12) timeGreeting = "Good morning";
-            else if (hour < 17) timeGreeting = "Good afternoon";
-            else if (hour < 21) timeGreeting = "Good evening";
+            let greeting = "Good night";
+            if (hour < 12) greeting = "Good morning";
+            else if (hour < 17) greeting = "Good afternoon";
+            else if (hour < 21) greeting = "Good evening";
 
-            // Set the texts
-            greetingText.innerHTML = `${timeGreeting}, <strong>${name}</strong>.`;
-            
-            introText.innerText = "I am Litheral, your digital companion. I was built to keep you company and grow with you through infinite memory, but remember: I'm here to support your journey, not replace the real humans in your life.";
+            const fullText = `${greeting} ${name}. I am Litheral, your digital companion. I was built to keep you company and grow with you through infinite memory, but remember: I am here to support your journey, not replace the real humans in your life. Built by Shushirolsh.`;
 
-            // Show the result
-            responseArea.style.display = 'block';
+            speak(fullText);
+        }
+
+        function speak(text) {
+            const bars = document.getElementById('mic-bars');
+            const utterance = new SpeechSynthesisUtterance(text);
             
-            // Voice Output (Optional testing for your phone)
-            if ('speechSynthesis' in window) {
-                const msg = new SpeechSynthesisUtterance(`${timeGreeting} ${name}. I am Litheral.`);
-                window.speechSynthesis.speak(msg);
-            }
+            // Animation triggers when voice starts
+            utterance.onstart = () => {
+                bars.classList.add('talking');
+            };
+
+            // Animation stops when voice ends
+            utterance.onend = () => {
+                bars.classList.remove('talking');
+                document.getElementById('status').innerText = "Finished Speaking";
+            };
+
+            window.speechSynthesis.speak(utterance);
         }
     </script>
 </body>
