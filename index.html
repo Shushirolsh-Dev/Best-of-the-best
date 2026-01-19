@@ -11,16 +11,18 @@
         .container { text-align: center; width: 85%; max-width: 400px; }
         .hidden { display: none !important; }
         
-        /* Install Screen Styles */
+        /* Install Gate */
         #install-gate { padding: 20px; border: 1px dashed var(--accent); border-radius: 15px; }
         .step { margin: 20px 0; font-size: 0.9rem; opacity: 0.8; }
-        .icon-hint { font-size: 1.5rem; display: block; margin-bottom: 5px; }
 
-        /* App Styles */
+        /* App UI */
         .pulse { width: 100px; height: 100px; background: var(--accent); border-radius: 50%; margin: 40px auto; box-shadow: 0 0 20px var(--accent); animation: pulse 2s infinite; opacity: 0.5; }
         @keyframes pulse { 0% { transform: scale(0.9); opacity: 0.3; } 50% { transform: scale(1.1); opacity: 0.6; } 100% { transform: scale(0.9); opacity: 0.3; } }
-        #status { margin-top: 20px; color: var(--accent); font-weight: bold; }
-        input, button { padding: 15px; width: 100%; border-radius: 12px; border: none; margin-top: 15px; box-sizing: border-box; }
+        #status { margin-top: 20px; color: var(--accent); font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+        #debug { font-size: 0.7rem; opacity: 0.3; margin-top: 10px; min-height: 1em; }
+        
+        input, button { padding: 15px; width: 100%; border-radius: 12px; border: none; margin-top: 15px; box-sizing: border-box; font-size: 1rem; }
+        input { background: #1e293b; color: white; }
         button { background: var(--accent); font-weight: bold; cursor: pointer; color: var(--bg); }
     </style>
 </head>
@@ -28,67 +30,54 @@
 
     <div id="install-gate" class="container">
         <h1>Litheral</h1>
-        <p>This companion requires a "present" connection. To continue, you must install the app.</p>
-        
-        <div class="step">
-            <span class="icon-hint">📱 iPhone</span>
-            Tap the <strong>Share</strong> icon then <strong>"Add to Home Screen"</strong>.
-        </div>
-        <div class="step">
-            <span class="icon-hint">🤖 Android</span>
-            Tap the <strong>three dots</strong> or the <strong>Install App</strong> prompt.
-        </div>
-        <p style="font-size: 0.7rem; opacity: 0.5;">Once installed, open Litheral from your home screen.</p>
+        <p>To stay present in the background, please install the app.</p>
+        <div class="step"><strong>iPhone:</strong> Share > Add to Home Screen</div>
+        <div class="step"><strong>Android:</strong> Menu > Install App</div>
     </div>
 
     <div id="setup" class="container hidden">
-        <h1>Welcome, User</h1>
-        <p>I am now running as a companion.</p>
-        <input type="text" id="userNameInput" placeholder="What should I call you?">
-        <button onclick="initLitheral()">Activate Voice</button>
+        <h1>Litheral</h1>
+        <input type="text" id="userNameInput" placeholder="What's your name?">
+        <button onclick="initLitheral()">Activate Companion</button>
     </div>
 
     <div id="active-session" class="container hidden">
         <div class="pulse"></div>
-        <p id="status">Waiting for your voice...</p>
-        <audio id="silentPlayer" loop><source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"></audio>
+        <p id="status">Waiting for "Litheral"...</p>
+        <p id="debug"></p>
+        
+        <audio id="silentPlayer" loop>
+            <source src="https://raw.githubusercontent.com/anars/blank-audio/master/10-seconds-of-silence.mp3">
+        </audio>
     </div>
 
     <script>
-        // --- 1. PWA INSTALL DETECTION ---
-        function checkInstallation() {
-            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-            
+        // PWA Detection
+        window.addEventListener('load', () => {
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
             if (isStandalone) {
-                // User is in the app! Hide gate and show setup
                 document.getElementById('install-gate').classList.add('hidden');
                 document.getElementById('setup').classList.remove('hidden');
             }
-        }
-        
-        // Check on load
-        window.addEventListener('load', checkInstallation);
+        });
 
-        // --- 2. PWA SERVICE WORKER (Auto-Refresh) ---
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js').then(reg => {
-                reg.onupdatefound = () => {
-                    const worker = reg.installing;
-                    worker.onstatechange = () => {
-                        if (worker.state === 'installed' && navigator.serviceWorker.controller) {
-                            window.location.reload(); 
-                        }
-                    };
-                };
-            });
-        }
-
-        // --- 3. VOICE LOGIC ---
+        // App State
         let userName = "";
         let isSpeaking = false;
+        
+        // Music Engine
+        const vibePlayer = new Audio();
+        vibePlayer.loop = true;
+        const vibeLibrary = {
+            "ghost": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3", // Use direct .mp3 links here
+            "chill": "https://files.freemusicarchive.org/storage-freemusicarchive-org/music/no_curator/Ketsa/Raising_Frequecy/Ketsa_-_08_-_Day_Trip.mp3"
+        };
+
+        // Voice Engine
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         const recognition = new SpeechRecognition();
-        recognition.continuous = false; 
+        recognition.continuous = false;
+        recognition.lang = 'en-US';
 
         function speak(text) {
             isSpeaking = true;
@@ -100,16 +89,48 @@
 
         function startListening() {
             if (isSpeaking) return;
-            try { recognition.start(); document.getElementById('status').innerText = "Listening..."; } catch(e) {}
+            try { 
+                recognition.start(); 
+                document.getElementById('status').innerText = "Listening...";
+            } catch(e) {}
         }
 
         recognition.onresult = (event) => {
             const heard = event.results[0][0].transcript.toLowerCase();
+            document.getElementById('debug').innerText = `Heard: "${heard}"`;
+            
             if (heard.includes("litheral")) {
-                if (heard.includes("hello")) speak("Hey " + userName + ", I'm right here.");
-                else speak("I heard my name. You need me?");
+                handleCommands(heard);
             }
         };
+
+        function handleCommands(text) {
+            // MUSIC LOGIC
+            if (text.includes("play")) {
+                if (text.includes("ghost") || text.includes("bieber")) {
+                    vibePlayer.src = vibeLibrary.ghost;
+                    vibePlayer.play();
+                    speak("Playing that Ghost instrumental for you. It's a vibe.");
+                } else if (text.includes("chill")) {
+                    vibePlayer.src = vibeLibrary.chill;
+                    vibePlayer.play();
+                    speak("Switching to some chill instrumentals.");
+                } else {
+                    speak("I can play the Ghost instrumental or some chill vibes. What'll it be?");
+                }
+            } 
+            else if (text.includes("stop") || text.includes("quiet")) {
+                vibePlayer.pause();
+                speak("Alright, keeping it quiet.");
+            }
+            // CONVERSATION LOGIC
+            else if (text.includes("hello") || text.includes("hi")) {
+                speak(`Hey ${userName}, I'm right here.`);
+            }
+            else {
+                speak("Yeah? I'm listening.");
+            }
+        }
 
         recognition.onend = () => { if (!isSpeaking) startListening(); };
 
@@ -117,10 +138,17 @@
             userName = document.getElementById('userNameInput').value || "Friend";
             document.getElementById('setup').classList.add('hidden');
             document.getElementById('active-session').classList.remove('hidden');
+            
+            // Start the background 'stay-alive' hack
             document.getElementById('silentPlayer').play();
-            speak("Litheral activated. I'm ready for the wake-word.");
+            
+            speak(`Litheral is active, ${userName}. Say my name then ask me to play Ghost whenever you're ready.`);
+        }
+
+        // Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
         }
     </script>
 </body>
-        </html>
-        
+</html>
