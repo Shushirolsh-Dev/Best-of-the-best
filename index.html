@@ -7,54 +7,88 @@
     <title>Litheral | Voice Companion</title>
     <style>
         :root { --bg: #0f172a; --accent: #38bdf8; --text: #f8fafc; }
-        body { background: var(--bg); color: var(--text); font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        .container { text-align: center; width: 80%; max-width: 400px; }
-        .hidden { display: none; }
-        .pulse { width: 100px; height: 100px; background: var(--accent); border-radius: 50%; margin: auto; box-shadow: 0 0 20px var(--accent); animation: pulse 2s infinite; opacity: 0.5; }
+        body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
+        .container { text-align: center; width: 85%; max-width: 400px; }
+        .hidden { display: none !important; }
+        
+        /* Install Screen Styles */
+        #install-gate { padding: 20px; border: 1px dashed var(--accent); border-radius: 15px; }
+        .step { margin: 20px 0; font-size: 0.9rem; opacity: 0.8; }
+        .icon-hint { font-size: 1.5rem; display: block; margin-bottom: 5px; }
+
+        /* App Styles */
+        .pulse { width: 100px; height: 100px; background: var(--accent); border-radius: 50%; margin: 40px auto; box-shadow: 0 0 20px var(--accent); animation: pulse 2s infinite; opacity: 0.5; }
         @keyframes pulse { 0% { transform: scale(0.9); opacity: 0.3; } 50% { transform: scale(1.1); opacity: 0.6; } 100% { transform: scale(0.9); opacity: 0.3; } }
         #status { margin-top: 20px; color: var(--accent); font-weight: bold; }
-        input, button { padding: 12px; width: 100%; border-radius: 8px; border: none; margin-top: 10px; }
-        button { background: var(--accent); font-weight: bold; cursor: pointer; }
+        input, button { padding: 15px; width: 100%; border-radius: 12px; border: none; margin-top: 15px; box-sizing: border-box; }
+        button { background: var(--accent); font-weight: bold; cursor: pointer; color: var(--bg); }
     </style>
 </head>
 <body>
 
-    <div id="setup" class="container">
-        <h1>LITHERAL</h1>
-        <input type="text" id="userNameInput" placeholder="Enter name...">
-        <button onclick="initLitheral()">Activate PWA</button>
+    <div id="install-gate" class="container">
+        <h1>Litheral</h1>
+        <p>This companion requires a "present" connection. To continue, you must install the app.</p>
+        
+        <div class="step">
+            <span class="icon-hint">📱 iPhone</span>
+            Tap the <strong>Share</strong> icon then <strong>"Add to Home Screen"</strong>.
+        </div>
+        <div class="step">
+            <span class="icon-hint">🤖 Android</span>
+            Tap the <strong>three dots</strong> or the <strong>Install App</strong> prompt.
+        </div>
+        <p style="font-size: 0.7rem; opacity: 0.5;">Once installed, open Litheral from your home screen.</p>
+    </div>
+
+    <div id="setup" class="container hidden">
+        <h1>Welcome, User</h1>
+        <p>I am now running as a companion.</p>
+        <input type="text" id="userNameInput" placeholder="What should I call you?">
+        <button onclick="initLitheral()">Activate Voice</button>
     </div>
 
     <div id="active-session" class="container hidden">
         <div class="pulse"></div>
-        <p id="status">Waiting...</p>
-        <p id="debug" style="font-size: 0.6rem; opacity: 0.3;"></p>
+        <p id="status">Waiting for your voice...</p>
         <audio id="silentPlayer" loop><source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"></audio>
     </div>
 
     <script>
-        // 1. PWA REGISTRATION & FORCE REFRESH
+        // --- 1. PWA INSTALL DETECTION ---
+        function checkInstallation() {
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+            
+            if (isStandalone) {
+                // User is in the app! Hide gate and show setup
+                document.getElementById('install-gate').classList.add('hidden');
+                document.getElementById('setup').classList.remove('hidden');
+            }
+        }
+        
+        // Check on load
+        window.addEventListener('load', checkInstallation);
+
+        // --- 2. PWA SERVICE WORKER (Auto-Refresh) ---
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js').then(reg => {
                 reg.onupdatefound = () => {
-                    const installingWorker = reg.installing;
-                    installingWorker.onstatechange = () => {
-                        if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                            // New update found! Reload the page to apply it
-                            window.location.reload();
+                    const worker = reg.installing;
+                    worker.onstatechange = () => {
+                        if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+                            window.location.reload(); 
                         }
                     };
                 };
             });
         }
 
-        // 2. VOICE LOGIC
+        // --- 3. VOICE LOGIC ---
         let userName = "";
         let isSpeaking = false;
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         const recognition = new SpeechRecognition();
         recognition.continuous = false; 
-        recognition.lang = 'en-US';
 
         function speak(text) {
             isSpeaking = true;
@@ -66,31 +100,27 @@
 
         function startListening() {
             if (isSpeaking) return;
-            try { 
-                recognition.start(); 
-                document.getElementById('status').innerText = "Listening for 'Litheral'...";
-            } catch(e) {}
+            try { recognition.start(); document.getElementById('status').innerText = "Listening..."; } catch(e) {}
         }
 
         recognition.onresult = (event) => {
             const heard = event.results[0][0].transcript.toLowerCase();
-            document.getElementById('debug').innerText = "Last heard: " + heard;
             if (heard.includes("litheral")) {
-                if (heard.includes("hello") || heard.includes("hi")) speak("Hey " + userName + ", I'm here.");
-                else if (heard.includes("how are you")) speak("I'm vibing in your pocket. You good?");
-                else speak("Yeah? I'm listening.");
+                if (heard.includes("hello")) speak("Hey " + userName + ", I'm right here.");
+                else speak("I heard my name. You need me?");
             }
         };
 
         recognition.onend = () => { if (!isSpeaking) startListening(); };
 
         function initLitheral() {
-            userName = document.getElementById('userNameInput').value || "User";
-            document.getElementById('setup').style.display = 'none';
+            userName = document.getElementById('userNameInput').value || "Friend";
+            document.getElementById('setup').classList.add('hidden');
             document.getElementById('active-session').classList.remove('hidden');
             document.getElementById('silentPlayer').play();
-            speak("Litheral activated. I'm in the background now.");
+            speak("Litheral activated. I'm ready for the wake-word.");
         }
     </script>
 </body>
-</html>
+        </html>
+        
