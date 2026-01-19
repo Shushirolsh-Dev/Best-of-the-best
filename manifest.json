@@ -1,7 +1,7 @@
 {
   "name": "Litheral",
   "short_name": "Litheral",
-  "description": "Infinite AI Companion with Persistent Memory",
+  "description": "Infinite AI Companion by Shushirolsh",
   "start_url": "index.html",
   "display": "standalone",
   "orientation": "portrait",
@@ -18,15 +18,13 @@
       "src": "icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     },
     {
       "src": "icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "maskable"
+      "purpose": "any"
     }
-  ],
-  "categories": ["productivity", "social"],
-  "screenshots": []
+  ]
 }
