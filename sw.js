@@ -1,5 +1,5 @@
-const CACHE_NAME = 'litheral-v2';
-const ASSETS_TO_CACHE = [
+const CACHE_NAME = 'litheral-v1';
+const ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
@@ -8,35 +8,20 @@ const ASSETS_TO_CACHE = [
   '/icon.svg'
 ];
 
-// Install and Cache Assets
-self.addEventListener('install', (event) => {
-  event.waitUntil(
+// Install Service Worker
+self.addEventListener('install', (e) => {
+  e.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
-    })
-  );
-  self.skipWaiting();
-});
-
-// Clean up old caches
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_NAME) return caches.delete(key);
-        })
-      );
+      return cache.addAll(ASSETS);
     })
   );
 });
 
-// The FETCH listener (Chrome requires this to remove the watermark)
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
+// Fetch Assets
+self.addEventListener('fetch', (e) => {
+  e.respondWith(
+    caches.match(e.request).then((response) => {
+      return response || fetch(e.request);
     })
   );
 });
-            
