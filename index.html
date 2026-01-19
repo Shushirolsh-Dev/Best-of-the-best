@@ -7,129 +7,126 @@
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#050810">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
-    <link rel="apple-touch-icon" href="icon-192.png">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
         :root { --bg: #050810; --accent: #38bdf8; --text: #f8fafc; }
         body { 
-            background: var(--bg); 
-            color: var(--text); 
-            font-family: -apple-system, sans-serif;
-            margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh;
-            overflow: hidden;
+            background: var(--bg); color: var(--text); font-family: -apple-system, sans-serif;
+            margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden;
         }
+        .screen { text-align: center; width: 90%; max-width: 400px; transition: 0.3s; display: none; }
+        .active { display: block; }
 
-        .screen { 
-            text-align: center; width: 90%; max-width: 400px; 
-            transition: opacity 0.5s ease;
-        }
-        .hidden { display: none; opacity: 0; }
-
-        /* INPUT SCREEN STYLES */
-        h1 { color: var(--accent); letter-spacing: 2px; }
         input {
-            width: 100%; padding: 18px; margin-top: 20px; border-radius: 15px;
-            border: 1px solid #334155; background: #1e293b; color: white;
-            font-size: 1rem; box-sizing: border-box;
+            width: 100%; padding: 15px; margin-top: 10px; border-radius: 12px;
+            border: 1px solid #334155; background: #1e293b; color: white; box-sizing: border-box;
         }
         button {
-            width: 100%; padding: 18px; margin-top: 15px; border-radius: 15px;
-            border: none; background: var(--accent); color: #050810;
-            font-weight: bold; font-size: 1rem; cursor: pointer;
+            width: 100%; padding: 15px; margin-top: 15px; border-radius: 12px;
+            border: none; background: var(--accent); color: #050810; font-weight: bold; cursor: pointer;
+        }
+        .secondary-btn { background: transparent; color: var(--accent); border: 1px solid var(--accent); margin-top: 10px; }
+        
+        /* Install Banner */
+        #install-area {
+            position: fixed; top: 20px; width: 90%; background: #1e293b; 
+            padding: 15px; border-radius: 15px; display: none; border: 1px solid var(--accent);
         }
 
-        /* VOICE SCREEN STYLES */
-        .avatar {
-            width: 120px; height: 120px;
-            margin-bottom: 30px;
-            border-radius: 50%;
-            border: 3px solid var(--accent);
-        }
-
-        /* MIC PULSE ANIMATION */
-        .pulse-container {
-            display: flex; align-items: center; justify-content: center; height: 60px; gap: 5px;
-        }
-        .bar { width: 6px; height: 15px; background: var(--accent); border-radius: 3px; }
+        /* Avatar & Pulse */
+        .avatar { width: 120px; height: 120px; border-radius: 50%; border: 3px solid var(--accent); margin-bottom: 20px; }
+        .pulse-container { display: flex; justify-content: center; height: 40px; gap: 5px; margin-top: 20px; }
+        .bar { width: 4px; height: 10px; background: var(--accent); border-radius: 2px; }
         .talking .bar { animation: pulse 0.6s infinite ease-in-out; }
-
-        @keyframes pulse {
-            0%, 100% { height: 15px; }
-            50% { height: 50px; }
-        }
-
-        .bar:nth-child(2) { animation-delay: 0.1s; }
-        .bar:nth-child(3) { animation-delay: 0.2s; }
-        .bar:nth-child(4) { animation-delay: 0.3s; }
-
-        .footer { position: fixed; bottom: 20px; font-size: 0.7rem; opacity: 0.4; letter-spacing: 2px; }
+        @keyframes pulse { 0%, 100% { height: 10px; } 50% { height: 40px; } }
     </style>
 </head>
 <body>
 
-    <div id="setup-screen" class="screen">
-        <h1>LITHERAL</h1>
-        <p>Enter your name to begin</p>
-        <input type="text" id="userName" placeholder="Your Name" autocomplete="off">
-        <button onclick="activate()">ACTIVATE</button>
+    <div id="install-area">
+        <p style="margin:0; font-size: 0.9rem;">Install Litheral for the full experience</p>
+        <button onclick="installApp()" style="padding: 8px; margin-top: 10px;">INSTALL NOW</button>
     </div>
 
-    <div id="voice-screen" class="screen hidden">
-        <img src="icon.svg" alt="Litheral" class="avatar">
+    <div id="auth-screen" class="screen">
+        <h1 style="color: var(--accent)">LITHERAL</h1>
+        <p id="auth-msg">Sign in to access your memory</p>
+        <input type="email" id="email" placeholder="Email">
+        <input type="password" id="password" placeholder="Password">
+        <button onclick="handleAuth('login')">LOGIN</button>
+        <button class="secondary-btn" onclick="handleAuth('signup')">CREATE ACCOUNT</button>
+    </div>
+
+    <div id="voice-screen" class="screen">
+        <img src="icon.svg" class="avatar">
+        <h2 id="greeting">Welcome back</h2>
         <div id="mic-bars" class="pulse-container">
-            <div class="bar"></div>
-            <div class="bar"></div>
-            <div class="bar)</div>
-            <div class="bar"></div>
-            <div class="bar"></div>
+            <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+            <div class="bar"></div><div class="bar"></div>
         </div>
-        <p id="status">Litheral is speaking...</p>
-        <div class="footer">BUILT BY SHUSHIROLSH</div>
+        <p id="status">Listening...</p>
+        <button class="secondary-btn" onclick="logout()" style="width: auto; padding: 5px 15px; font-size: 0.7rem;">LOGOUT</button>
     </div>
 
     <script>
+        const supabase = supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_KEY');
+        let deferredPrompt;
+
+        // --- PWA INSTALL LOGIC ---
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('install-area').style.display = 'block';
+        });
+
+        async function installApp() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') document.getElementById('install-area').style.display = 'none';
+                deferredPrompt = null;
+            }
+        }
+
+        // --- AUTH LOGIC ---
+        async function handleAuth(type) {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            if (!email || !password) return alert("Fill in the fields, homie.");
+
+            const { error } = (type === 'signup') 
+                ? await supabase.auth.signUp({ email, password })
+                : await supabase.auth.signInWithPassword({ email, password });
+
+            if (error) alert(error.message);
+            else if (type === 'signup') alert("Check your email to verify!");
+        }
+
+        async function logout() {
+            await supabase.auth.signOut();
+            showScreen('auth-screen');
+        }
+
+        // --- SESSION MANAGEMENT ---
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        // AUTO-REDIRECT IF LOGGED IN
+        supabase.auth.onAuthStateChange((event, session) => {
+            if (session) {
+                showScreen('voice-screen');
+                document.getElementById('install-area').style.display = 'none'; // Hide install prompt once inside
+            } else {
+                showScreen('auth-screen');
+            }
+        });
+
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js');
-        }
-
-        function activate() {
-            const name = document.getElementById('userName').value.trim();
-            if (!name) return alert("I need your name, homie.");
-
-            document.getElementById('setup-screen').classList.add('hidden');
-            const voiceScreen = document.getElementById('voice-screen');
-            voiceScreen.classList.remove('hidden');
-
-            const hour = new Date().getHours();
-            let greeting = "Good night";
-            if (hour < 12) greeting = "Good morning";
-            else if (hour < 17) greeting = "Good afternoon";
-            else if (hour < 21) greeting = "Good evening";
-
-            const fullText = `${greeting} ${name}. I am Litheral, your digital companion. I was built to keep you company and grow with you through infinite memory, but remember: I am here to support your journey, not replace the real humans in your life. Built by Shushirolsh.`;
-
-            speak(fullText);
-        }
-
-        function speak(text) {
-            const bars = document.getElementById('mic-bars');
-            const utterance = new SpeechSynthesisUtterance(text);
-            
-            utterance.onstart = () => {
-                bars.classList.add('talking');
-            };
-
-            utterance.onend = () => {
-                bars.classList.remove('talking');
-                document.getElementById('status').innerText = "Finished Speaking";
-            };
-
-            window.speechSynthesis.speak(utterance);
         }
     </script>
 </body>
