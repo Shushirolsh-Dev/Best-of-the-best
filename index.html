@@ -3,96 +3,189 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NexGen Digital | Social Media Authority</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Litheral | Your Voice Companion</title>
     <style>
-        /* Animated Background */
-        body {
-            background: linear-gradient(-45deg, #0f172a, #1e1b4b, #312e81, #1e1b4b);
-            background-size: 400% 400%;
-            animation: gradient 15s ease infinite;
-            color: white;
-            font-family: 'Inter', sans-serif;
+        :root {
+            --bg: #0f172a;
+            --accent: #38bdf8;
+            --text: #f8fafc;
         }
+        body { 
+            background: var(--bg); color: var(--text); 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex; align-items: center; justify-content: center; 
+            height: 100vh; margin: 0; overflow: hidden;
+        }
+        .container { text-align: center; transition: all 0.5s ease; width: 80%; max-width: 400px; }
+        h1 { font-weight: 300; letter-spacing: 2px; margin-bottom: 30px; }
+        
+        /* Setup UI */
+        input { 
+            padding: 15px; border-radius: 12px; border: 1px solid #334155; 
+            background: #1e293b; color: white; font-size: 1.1rem; 
+            outline: none; text-align: center; width: 100%; box-sizing: border-box;
+        }
+        button {
+            margin-top: 20px; padding: 15px 30px; border-radius: 12px; border: none;
+            background: var(--accent); color: var(--bg); font-weight: bold;
+            cursor: pointer; width: 100%; font-size: 1rem; transition: transform 0.2s;
+        }
+        button:hover { transform: scale(1.02); }
 
-        @keyframes gradient {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+        /* Active UI */
+        .hidden { display: none; opacity: 0; }
+        .pulse-wrapper { position: relative; width: 150px; height: 150px; margin: auto; }
+        .pulse {
+            position: absolute; width: 100%; height: 100%;
+            background: var(--accent); border-radius: 50%;
+            box-shadow: 0 0 30px var(--accent);
+            animation: pulse-anim 4s infinite ease-in-out;
+            opacity: 0.6;
         }
-
-        .glass {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+        @keyframes pulse-anim {
+            0% { transform: scale(0.8); opacity: 0.3; }
+            50% { transform: scale(1.1); opacity: 0.6; }
+            100% { transform: scale(0.8); opacity: 0.3; }
         }
+        #status-text { margin-top: 30px; font-size: 0.9rem; opacity: 0.5; font-style: italic; }
     </style>
 </head>
-<body class="min-h-screen">
+<body>
 
-    <nav class="flex justify-between items-center p-6 max-w-7xl mx-auto">
-        <h1 class="text-2xl font-black tracking-tighter italic">NEXGEN.</h1>
-        <div class="hidden md:flex gap-8 font-medium text-sm uppercase tracking-widest">
-            <a href="#" class="hover:text-purple-400 transition">Services</a>
-            <a href="#" class="hover:text-purple-400 transition">Portfolio</a>
-            <a href="#" class="hover:text-purple-400 transition">Contact</a>
+    <div id="setup" class="container">
+        <h1>LITHERAL</h1>
+        <input type="text" id="userNameInput" placeholder="Enter your name..." autocomplete="off">
+        <button onclick="initLitheral()">Wake up Litheral</button>
+    </div>
+
+    <div id="active-session" class="container hidden">
+        <div class="pulse-wrapper">
+            <div class="pulse"></div>
         </div>
-        <button class="bg-white text-black px-6 py-2 rounded-full font-bold text-sm hover:bg-purple-400 transition">LET'S TALK</button>
-    </nav>
+        <p id="litheral-speech" style="margin-top: 40px; min-height: 1.5em; font-weight: 300;"></p>
+        <p id="status-text">Litheral is present</p>
+        
+        <audio id="silentPlayer" loop>
+            <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+        </audio>
+    </div>
 
-    <header class="max-w-4xl mx-auto text-center mt-20 px-6">
-        <span class="bg-purple-900/50 text-purple-300 px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest border border-purple-500/30">Digital Growth Agency</span>
-        <h2 class="text-5xl md:text-7xl font-bold mt-6 leading-tight">We Scale Brands <br> <span class="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500">Into Icons.</span></h2>
-        <p class="mt-6 text-gray-400 text-lg max-w-xl mx-auto">Mastering Social Media Marketing, Management, and full-stack Digital Strategy to dominate the algorithm.</p>
-    </header>
+    <script>
+        let userName = "";
+        let phoneticName = ""; 
+        let currentMode = "GET_PRONUNCIATION";
 
-    <section class="max-w-7xl mx-auto grid md:grid-cols-3 gap-6 px-6 mt-24">
-        <div class="glass p-8 rounded-3xl hover:border-purple-500 transition-all duration-500 group">
-            <div class="mb-4 text-purple-400 group-hover:scale-110 transition-transform">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-            </div>
-            <h3 class="text-xl font-bold mb-2">Social Marketing</h3>
-            <p class="text-gray-400 text-sm">Targeted ad campaigns that convert window shoppers into loyal customers.</p>
-        </div>
+        // Initialize Speech Recognition
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = 'en-US';
 
-        <div class="glass p-8 rounded-3xl hover:border-purple-500 transition-all duration-500 group">
-            <div class="mb-4 text-purple-400 group-hover:scale-110 transition-transform">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-            </div>
-            <h3 class="text-xl font-bold mb-2">Social Management</h3>
-            <p class="text-gray-400 text-sm">Consistent, high-quality content scheduling and community engagement.</p>
-        </div>
-
-        <div class="glass p-8 rounded-3xl hover:border-purple-500 transition-all duration-500 group">
-            <div class="mb-4 text-purple-400 group-hover:scale-110 transition-transform">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
-            </div>
-            <h3 class="text-xl font-bold mb-2">Digital Strategy</h3>
-            <p class="text-gray-400 text-sm">Full-funnel digital marketing to ensure long-term brand sustainability.</p>
-        </div>
-    </section>
-
-    <footer class="mt-32 pb-20 px-6 border-t border-white/10 pt-16">
-        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-12">
-            <div>
-                <h4 class="text-3xl font-bold mb-4">Start the revolution.</h4>
-                <p class="text-gray-400">hello@nexgendigital.com</p>
-                <p class="text-gray-400">+1 (555) 000-DUMMY</p>
-            </div>
+        function speak(text, callback) {
+            document.getElementById('litheral-speech').innerText = ""; // Hide text for true voice-first feel
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 0.9; 
+            utterance.pitch = 1.0;
             
-            <div class="flex gap-6">
-                <a href="#" class="p-3 glass rounded-full hover:bg-white hover:text-black transition">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-                </a>
-                <a href="#" class="p-3 glass rounded-full hover:bg-white hover:text-black transition">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l11.733 16h4.267l-11.733 -16z"/><path d="M4 20l6.768 -6.768m2.46 -2.46l6.772 -6.772"/></svg>
-                </a>
-                <a href="#" class="p-3 glass rounded-full hover:bg-white hover:text-black transition">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/><path d="M9 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1Z"/><path d="M14 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1Z"/></svg>
-                </a>
-            </div>
-        </div>
-    </footer>
+            utterance.onend = () => { 
+                if (callback) callback(); 
+            };
+            window.speechSynthesis.speak(utterance);
+        }
 
+        function initLitheral() {
+            userName = document.getElementById('userNameInput').value;
+            if(!userName) return alert("How should I spell your name?");
+
+            // Switch UI
+            document.getElementById('setup').classList.add('hidden');
+            setTimeout(() => {
+                document.getElementById('setup').style.display = 'none';
+                document.getElementById('active-session').classList.remove('hidden');
+            }, 500);
+
+            // Start Audio Hack
+            const audio = document.getElementById('silentPlayer');
+            audio.volume = 0.01; 
+            audio.play().catch(e => console.log("Audio play blocked until click."));
+
+            // Start Conversation
+            speak(`Hi ${userName}. I want to make sure I say your name right. Go ahead and say it for me?`, () => {
+                startListening();
+            });
+        }
+
+        function startListening() {
+            document.getElementById('status-text').innerText = "Litheral is listening...";
+            recognition.start();
+        }
+
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            document.getElementById('status-text').innerText = "Litheral is thinking...";
+            
+            handleVoiceLogic(transcript);
+        };
+
+        recognition.onerror = () => {
+            document.getElementById('status-text').innerText = "Litheral is present";
+            // If it times out, wait a bit and try again if we are still in onboarding
+            if(currentMode !== "IDLE") setTimeout(startListening, 3000);
+        };
+
+        function handleVoiceLogic(said) {
+            console.log("User said:", said);
+
+            if (currentMode === "GET_PRONUNCIATION") {
+                phoneticName = said;
+                currentMode = "CONFIRM_PRONUNCIATION";
+                speak(`Okay, I heard ${phoneticName}. Did I get that right?`, () => {
+                    startListening();
+                });
+            } 
+            
+            else if (currentMode === "CONFIRM_PRONUNCIATION") {
+                if (said.toLowerCase().includes("yes") || said.toLowerCase().includes("yeah") || said.toLowerCase().includes("sure")) {
+                    currentMode = "GET_COUNTRY";
+                    speak(`Perfect, ${phoneticName}. I'll remember that. So, what part of the world are you in?`, () => {
+                        startListening();
+                    });
+                } else {
+                    currentMode = "GET_PRONUNCIATION";
+                    speak("My bad. Say your name one more time, nice and clear?", () => {
+                        startListening();
+                    });
+                }
+            }
+
+            else if (currentMode === "GET_COUNTRY") {
+                const country = said;
+                currentMode = "IDLE";
+                speak(`Noted, ${country} homie. I'm going to hang back now and just be here with you. I'll check in later.`, () => {
+                    document.getElementById('status-text').innerText = "Litheral is in the background";
+                    scheduleRandomCheckIn();
+                });
+            }
+        }
+
+        function scheduleRandomCheckIn() {
+            // Logic for proactive random nudges
+            const min = 45 * 60 * 1000; // 45 mins
+            const max = 90 * 60 * 1000; // 90 mins
+            const delay = Math.floor(Math.random() * (max - min + 1) + min);
+
+            setTimeout(() => {
+                const thoughts = [
+                    `Hey ${phoneticName}, just checking in. You doing okay?`,
+                    `It's been a bit quiet. Just wanted to let you know I'm still here.`,
+                    `Don't forget to take a sip of water, ${phoneticName}.`
+                ];
+                const pick = thoughts[Math.floor(Math.random() * thoughts.length)];
+                speak(pick);
+                scheduleRandomCheckIn(); // Loop the randomness
+            }, delay);
+        }
+    </script>
 </body>
 </html>
