@@ -7,7 +7,12 @@
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#050810">
-    <link rel="apple-touch-icon" href="icon.svg">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
 
     <style>
         :root { --bg: #050810; --accent: #38bdf8; --text: #f8fafc; }
@@ -79,7 +84,7 @@
         <div id="mic-bars" class="pulse-container">
             <div class="bar"></div>
             <div class="bar"></div>
-            <div class="bar"></div>
+            <div class="bar)</div>
             <div class="bar"></div>
             <div class="bar"></div>
         </div>
@@ -88,7 +93,6 @@
     </div>
 
     <script>
-        // 1. PWA Service Worker Registration
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js');
         }
@@ -97,12 +101,10 @@
             const name = document.getElementById('userName').value.trim();
             if (!name) return alert("I need your name, homie.");
 
-            // Switch Screens
             document.getElementById('setup-screen').classList.add('hidden');
             const voiceScreen = document.getElementById('voice-screen');
             voiceScreen.classList.remove('hidden');
 
-            // Logic for Greeting
             const hour = new Date().getHours();
             let greeting = "Good night";
             if (hour < 12) greeting = "Good morning";
@@ -118,12 +120,10 @@
             const bars = document.getElementById('mic-bars');
             const utterance = new SpeechSynthesisUtterance(text);
             
-            // Animation triggers when voice starts
             utterance.onstart = () => {
                 bars.classList.add('talking');
             };
 
-            // Animation stops when voice ends
             utterance.onend = () => {
                 bars.classList.remove('talking');
                 document.getElementById('status').innerText = "Finished Speaking";
