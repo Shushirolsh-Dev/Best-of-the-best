@@ -5,22 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Litheral | Infinite Memory AI</title>
     
-    <!-- PWA manifest -->
     <link rel="manifest" href="manifest.json">
-    
-    <!-- Theme color for address bar / splash -->
     <meta name="theme-color" content="#050810">
-    
-    <!-- Favicon fallback -->
     <link rel="icon" type="image/svg+xml" href="icon.svg">
-    
-    <!-- iOS / Safari support for standalone mode and proper icon -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="/icon-192.png">
-    <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png">
-    <!-- Add this later when you have icon-512.png: <link rel="apple-touch-icon" sizes="512x512" href="/icon-512.png"> -->
-    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
@@ -108,10 +95,6 @@
         <div class="cta-container">
             <a href="auth.html" class="btn btn-primary">GET STARTED</a>
             <a href="#features" class="btn btn-secondary">LEARN MORE</a>
-            <!-- Custom Install Button (shows only when installable) -->
-            <button id="installBtn" class="btn btn-primary" style="display: none;">
-                Install Litheral App
-            </button>
         </div>
     </section>
 
@@ -145,55 +128,12 @@
             if (session) window.location.href = 'app.html';
         });
 
-        // Service Worker registration
+        // Simple Service Worker registration (keeping it in the background for performance)
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
-                    .then(reg => console.log('Service Worker registered'))
-                    .catch(err => console.log('Service Worker registration failed:', err));
+                navigator.serviceWorker.register('sw.js');
             });
         }
-
-        // Custom PWA Install Button
-        let deferredPrompt;
-
-        window.addEventListener('beforeinstallprompt', (e) => {
-            // Prevent default mini-infobar (we'll show our own button)
-            e.preventDefault();
-            deferredPrompt = e;
-            // Show the install button
-            document.getElementById('installBtn').style.display = 'flex';
-        });
-
-        document.getElementById('installBtn').addEventListener('click', async () => {
-            if (!deferredPrompt) return;
-
-            const installBtn = document.getElementById('installBtn');
-            installBtn.disabled = true;
-            installBtn.textContent = 'Installing...';
-
-            // Show the native install prompt
-            deferredPrompt.prompt();
-
-            const { outcome } = await deferredPrompt.userChoice;
-            console.log(`Install prompt outcome: ${outcome}`);
-
-            if (outcome === 'accepted') {
-                installBtn.textContent = 'Installed!';
-                installBtn.disabled = true;
-            } else {
-                installBtn.textContent = 'Install Litheral App';
-                installBtn.disabled = false;
-            }
-
-            deferredPrompt = null;
-        });
-
-        // Hide button after successful install
-        window.addEventListener('appinstalled', () => {
-            document.getElementById('installBtn').style.display = 'none';
-            console.log('Litheral was installed');
-        });
     </script>
 </body>
 </html>
