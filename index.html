@@ -8,6 +8,13 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#050810">
     <link rel="icon" type="image/svg+xml" href="icon.svg">
+    
+    <!-- iOS standalone fixes (unchanged from before) -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="/icon-192.png">
+    <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png">
+    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
@@ -53,10 +60,9 @@
             display: flex; align-items: center; justify-content: center; gap: 10px;
         }
 
-        .btn-primary { background: var(--accent); color: #050810; }
+        .btn-primary { background: var(--accent); color: #050810; box-shadow: 0 0 20px rgba(56, 189, 248, 0.3); }
         .btn-secondary { background: var(--glass); color: white; border: 1px solid rgba(255, 255, 255, 0.1); }
         
-        /* SWIPEABLE FEATURES SECTION */
         .features-wrapper {
             width: 100%; overflow-x: auto; display: flex;
             scroll-snap-type: x mandatory; padding: 20px; gap: 20px;
@@ -79,6 +85,57 @@
             border-top: 1px solid rgba(255, 255, 255, 0.05); margin-top: 40px;
         }
         footer b { color: var(--accent); }
+
+        /* NEW: Notification banner styles (toast-like at bottom) */
+        #install-notification {
+            position: fixed;
+            bottom: -100px; /* hidden initially */
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            border-radius: 16px;
+            padding: 16px 24px;
+            max-width: 90%;
+            width: 360px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            transition: bottom 0.5s ease;
+            color: var(--text);
+            font-weight: 600;
+        }
+
+        #install-notification.show {
+            bottom: 20px;
+        }
+
+        #install-notification button {
+            background: var(--accent);
+            color: #050810;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        #install-notification button:hover {
+            transform: scale(1.05);
+        }
+
+        #close-install {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 1.4rem;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -96,6 +153,7 @@
         <div class="cta-container">
             <a href="auth.html" class="btn btn-primary">GET STARTED</a>
             <a href="#features" class="btn btn-secondary">LEARN MORE</a>
+            <!-- No button here anymore – notification banner replaces it -->
         </div>
     </section>
 
@@ -103,7 +161,7 @@
     <section id="features" class="features-wrapper">
         <div class="card">
             <h3>Vector Brain</h3>
-            <p>Litheral understands the *meaning* of your life, not just keywords. It maps your thoughts in high-dimensional space.</p>
+            <p>Litheral understands the meaning of your life, not just keywords. It maps your thoughts in high-dimensional space.</p>
         </div>
         <div class="card">
             <h3>Perfect Recall</h3>
@@ -113,10 +171,6 @@
             <h3>Private Vault</h3>
             <p>Your memories are yours. Every piece of data is locked to your unique account via Supabase encryption.</p>
         </div>
-        <div class="card">
-            <h3>Mobile First</h3>
-            <p>Designed to live on your home screen. Fast, light, and always ready to listen to your vibe.</p>
-        </div>
     </section>
 
     <footer>
@@ -124,24 +178,77 @@
         <p>&copy; <span id="year"></span> Litheral AI. All rights reserved.</p>
     </footer>
 
+    <!-- NEW: Install notification banner (toast style) -->
+    <div id="install-notification">
+        <span>Install Litheral for offline access & faster vibes?</span>
+        <button id="installBtn">Install</button>
+        <button id="close-install">×</button>
+    </div>
+
     <script>
         document.getElementById('year').textContent = new Date().getFullYear();
 
+        // Redirect if logged in
         const supabase = supabase.createClient('YOUR_URL', 'YOUR_KEY');
-
         supabase.auth.onAuthStateChange((event, session) => {
             if (session) window.location.href = 'app.html';
         });
 
+        // Service Worker registration
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
-                .then(reg => {
-                    reg.update();
-                    console.log("SW Active");
-                });
+                navigator.serviceWorker.register('sw.js');
             });
         }
+
+        // Install notification logic
+        let deferredPrompt;
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+
+            // Show the notification banner
+            const notif = document.getElementById('install-notification');
+            notif.classList.add('show');
+        });
+
+        // Install button in banner
+        document.getElementById('installBtn').addEventListener('click', async () => {
+            if (!deferredPrompt) return;
+
+            const installBtn = document.getElementById('installBtn');
+            installBtn.textContent = 'Installing...';
+            installBtn.disabled = true;
+
+            deferredPrompt.prompt();
+
+            const { outcome } = await deferredPrompt.userChoice;
+
+            if (outcome === 'accepted') {
+                installBtn.textContent = 'Installed!';
+                // Optional: hide banner after success
+                setTimeout(() => {
+                    document.getElementById('install-notification').classList.remove('show');
+                }, 2000);
+            } else {
+                installBtn.textContent = 'Install';
+                installBtn.disabled = false;
+            }
+
+            deferredPrompt = null;
+        });
+
+        // Close banner button
+        document.getElementById('close-install').addEventListener('click', () => {
+            document.getElementById('install-notification').classList.remove('show');
+        });
+
+        // Hide banner if app gets installed
+        window.addEventListener('appinstalled', () => {
+            document.getElementById('install-notification').classList.remove('show');
+            console.log('Litheral installed via banner');
+        });
     </script>
 </body>
 </html>
