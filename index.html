@@ -1,387 +1,257 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Litheral | Infinite Memory AI</title>
-    
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#050810">
-    <link rel="icon" type="image/svg+xml" href="icon.svg">
-    
-    <!-- iOS standalone + icon support -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="/icon-192.png">
-    <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png">
-    
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fresh Fish Market - Lagos | Buy Quality Titus & Croaker</title>
+  <meta name="description" content="Buy fresh, quality fish straight from Lagos waters. Fast delivery in Lagos. Titus, Croaker, Catfish and more."/>
+  <style>
+    :root {
+      --primary: #1e40af;     /* blue like ocean */
+      --primary-dark: #1e3a8a;
+      --accent: #f97316;       /* orange for CTA */
+      --text: #1f2937;
+      --light: #f9fafb;
+    }
 
-    <style>
-        :root {
-            --bg: #000000;
-            --accent: #38bdf8;
-            --accent-glow: rgba(56, 189, 248, 0.25);
-            --text: #f8fafc;
-            --text-dim: #94a3b8;
-            --glass: rgba(255, 255, 255, 0.04);
-            --border: rgba(56, 189, 248, 0.12);
-        }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-        
-        body {
-            background: var(--bg);
-            color: var(--text);
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            line-height: 1.6;
-            overflow-x: hidden;
-            min-height: 100vh;
-        }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      line-height: 1.6;
+      color: var(--text);
+      background: var(--light);
+    }
 
-        .hero {
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 4rem 1.5rem 6rem;
-            background: radial-gradient(circle at 50% 30%, #0f172a 0%, var(--bg) 70%);
-        }
+    header {
+      background: var(--primary);
+      color: white;
+      padding: 1rem;
+      text-align: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
 
-        .mic-container {
-            position: relative;
-            width: 140px;
-            height: 140px;
-            margin-bottom: 3rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+    header h1 {
+      font-size: 1.8rem;
+      margin-bottom: 0.3rem;
+    }
 
-        .logo-box {
-            width: 100%;
-            height: 100%;
-            z-index: 2;
-            animation: float 4s ease-in-out infinite;
-            filter: drop-shadow(0 0 30px var(--accent-glow));
-        }
+    .tagline {
+      font-size: 1rem;
+      opacity: 0.9;
+    }
 
-        .pulse-wave {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            border: 1.5px solid var(--accent);
-            border-radius: 40%;
-            animation: ripple 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-            opacity: 0;
-            box-shadow: 0 0 40px var(--accent-glow);
-        }
+    main {
+      max-width: 1100px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
 
-        .pulse-wave:nth-child(2) {
-            animation-delay: 1s;
-        }
+    .product-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2.5rem;
+      align-items: center;
+    }
 
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-12px); }
-        }
+    .product-image {
+      width: 100%;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+      border: 1px solid #e5e7eb;
+    }
 
-        @keyframes ripple {
-            0% { transform: scale(0.8); opacity: 0.6; }
-            70% { opacity: 0.3; }
-            100% { transform: scale(1.6); opacity: 0; }
-        }
+    .product-details h2 {
+      color: var(--primary-dark);
+      margin-bottom: 1rem;
+      font-size: 2.2rem;
+    }
 
-        h1 {
-            font-size: clamp(3.5rem, 8vw, 6rem);
-            font-weight: 900;
-            letter-spacing: -0.08em;
-            color: var(--accent);
-            margin-bottom: 1rem;
-            text-shadow: 0 0 40px var(--accent-glow);
-        }
+    .price {
+      font-size: 2.5rem;
+      font-weight: bold;
+      color: #dc2626;
+      margin: 1rem 0;
+    }
 
-        .tagline {
-            font-size: clamp(1.125rem, 4vw, 1.4rem);
-            color: var(--text-dim);
-            max-width: 480px;
-            margin: 0 auto 3.5rem;
-            line-height: 1.5;
-        }
+    .price small {
+      font-size: 1.1rem;
+      color: #6b7280;
+      font-weight: normal;
+    }
 
-        .cta-container {
-            display: flex;
-            flex-direction: column;
-            gap: 1.25rem;
-            width: 100%;
-            max-width: 360px;
-        }
+    .description {
+      margin: 1.5rem 0;
+      color: #4b5563;
+    }
 
-        .btn {
-            padding: 1.25rem 2rem;
-            border-radius: 9999px;
-            border: none;
-            font-weight: 800;
-            font-size: 1.125rem;
-            cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            backdrop-filter: blur(10px);
-        }
+    .features {
+      list-style: none;
+      margin: 1.5rem 0;
+    }
 
-        .btn-primary {
-            background: linear-gradient(135deg, var(--accent) 0%, #0ea5e9 100%);
-            color: #000;
-            box-shadow: 0 10px 40px var(--accent-glow);
-        }
+    .features li {
+      margin: 0.8rem 0;
+      padding-left: 1.8rem;
+      position: relative;
+    }
 
-        .btn-primary:hover {
-            transform: translateY(-3px) scale(1.03);
-            box-shadow: 0 20px 60px var(--accent-glow);
-        }
+    .features li::before {
+      content: "✓";
+      color: green;
+      position: absolute;
+      left: 0;
+      font-weight: bold;
+    }
 
-        .btn-secondary {
-            background: var(--glass);
-            color: var(--text);
-            border: 1px solid var(--border);
-        }
+    .order-section {
+      margin-top: 2rem;
+      padding: 1.5rem;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    }
 
-        .btn-secondary:hover {
-            background: rgba(255,255,255,0.08);
-            border-color: var(--accent);
-        }
+    .quantity {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
 
-        .swipe-hint {
-            text-align: center;
-            color: var(--accent);
-            font-size: 0.9rem;
-            margin: 2rem 0 1.5rem;
-            opacity: 0.7;
-            letter-spacing: 0.05em;
-        }
+    .quantity button {
+      width: 40px;
+      height: 40px;
+      font-size: 1.3rem;
+      border: 1px solid #d1d5db;
+      background: white;
+      border-radius: 6px;
+      cursor: pointer;
+    }
 
-        .features-wrapper {
-            display: flex;
-            overflow-x: auto;
-            gap: 1.5rem;
-            padding: 0 1.5rem 4rem;
-            scroll-snap-type: x mandatory;
-            scrollbar-width: none;
-        }
+    .quantity span {
+      font-size: 1.4rem;
+      min-width: 40px;
+      text-align: center;
+    }
 
-        .features-wrapper::-webkit-scrollbar {
-            display: none;
-        }
+    .btn {
+      display: inline-block;
+      background: var(--accent);
+      color: white;
+      font-size: 1.2rem;
+      font-weight: bold;
+      padding: 1rem 2rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
 
-        .card {
-            flex: 0 0 85%;
-            max-width: 420px;
-            scroll-snap-align: center;
-            background: var(--glass);
-            backdrop-filter: blur(16px);
-            padding: 2.5rem;
-            border-radius: 24px;
-            border: 1px solid var(--border);
-            transition: all 0.4s ease;
-        }
+    .btn:hover {
+      background: #ea580c;
+      transform: translateY(-2px);
+    }
 
-        .card:hover {
-            transform: translateY(-8px);
-            border-color: var(--accent);
-            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
-        }
+    .btn-whatsapp {
+      background: #25D366;
+      margin-left: 1rem;
+    }
 
-        .card h3 {
-            color: var(--accent);
-            font-size: 1.6rem;
-            margin-bottom: 1rem;
-            font-weight: 800;
-        }
+    .btn-whatsapp:hover {
+      background: #20b858;
+    }
 
-        .card p {
-            color: var(--text-dim);
-            font-size: 1.05rem;
-        }
+    footer {
+      background: var(--primary);
+      color: white;
+      text-align: center;
+      padding: 1.5rem;
+      margin-top: 3rem;
+    }
 
-        footer {
-            text-align: center;
-            padding: 5rem 1.5rem 3rem;
-            color: var(--text-dim);
-            font-size: 0.9rem;
-            border-top: 1px solid var(--border);
-        }
-
-        footer b {
-            color: var(--accent);
-        }
-
-        /* Install notification banner (unchanged logic, fits new aesthetic) */
-        #install-notification {
-            position: fixed;
-            bottom: -120px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--glass);
-            backdrop-filter: blur(16px);
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            padding: 1.25rem 2rem;
-            max-width: 90%;
-            width: 420px;
-            box-shadow: 0 16px 64px rgba(0,0,0,0.6);
-            z-index: 9999;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 1.5rem;
-            transition: bottom 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-            color: var(--text);
-            font-weight: 600;
-            font-size: 1.05rem;
-        }
-
-        #install-notification.show {
-            bottom: 2rem;
-        }
-
-        #install-notification button#installBtn {
-            background: var(--accent);
-            color: #000;
-            border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: 9999px;
-            font-weight: 800;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        #install-notification button#installBtn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 0 30px var(--accent-glow);
-        }
-
-        #close-install {
-            background: none;
-            border: none;
-            color: var(--text-dim);
-            font-size: 1.6rem;
-            cursor: pointer;
-            transition: color 0.3s;
-        }
-
-        #close-install:hover {
-            color: var(--accent);
-        }
-    </style>
+    @media (max-width: 768px) {
+      .product-container {
+        grid-template-columns: 1fr;
+      }
+      
+      .product-details h2 {
+        font-size: 1.9rem;
+      }
+      
+      .price {
+        font-size: 2.2rem;
+      }
+    }
+  </style>
 </head>
 <body>
 
-    <section class="hero">
-        <div class="mic-container">
-            <div class="pulse-wave"></div>
-            <div class="pulse-wave"></div>
-            <img src="icon.svg" class="logo-box" alt="Litheral">
-        </div>
+  <header>
+    <h1>Fresh Fish Market – Lagos</h1>
+    <p class="tagline">Straight from the waters • Daily fresh catch • Fast delivery in Lagos</p>
+  </header>
 
-        <h1>LITHERAL</h1>
-        <p class="tagline">The first AI companion with infinite vector memory. Evolving with you.</p>
+  <main>
+    <div class="product-container">
+      <div>
+        <img 
+          src="https://images.unsplash.com/photo-1627308594188-4d8052397c7e?w=800&auto=format&fit=crop&q=80" 
+          alt="Fresh Titus fish (mackerel) on ice" 
+          class="product-image"
+        >
+      </div>
 
-        <div class="cta-container">
-            <a href="auth.html" class="btn btn-primary">GET STARTED</a>
-            <a href="#features" class="btn btn-secondary">LEARN MORE</a>
-        </div>
-    </section>
+      <div class="product-details">
+        <h2>Fresh Titus (Mackerel) – Premium Grade</h2>
+        
+        <div class="price">₦3,200 <small>per kg</small></div>
+        
+        <p class="description">
+          Juicy, fresh Titus straight from the Atlantic. Caught daily, cleaned, and ready for your pot. Perfect for pepper soup, frying, stew or grilling. No preservatives, no freezing history.
+        </p>
 
-    <p class="swipe-hint">Swipe right to explore features</p>
-    <section id="features" class="features-wrapper">
-        <div class="card">
-            <h3>Vector Brain</h3>
-            <p>Litheral understands the meaning of your life, not just keywords. It maps your thoughts in high-dimensional space.</p>
-        </div>
-        <div class="card">
-            <h3>Perfect Recall</h3>
-            <p>Unlike other AI, Litheral uses persistent remote storage. It remembers what you said last year as clearly as today.</p>
-        </div>
-        <div class="card">
-            <h3>Private Vault</h3>
-            <p>Your memories are yours. Every piece of data is locked to your unique account via Supabase encryption.</p>
-        </div>
-    </section>
+        <ul class="features">
+          <li>100% fresh – never frozen</li>
+          <li>Sourced from local fishermen in Lagos</li>
+          <li>Cleaned & gutted (optional whole fish)</li>
+          <li>Fast same-day delivery in Lagos mainland & island</li>
+          <li>Minimum order 1 kg</li>
+        </ul>
 
-    <footer>
-        <p>Built by <b>Shushirolsh</b></p>
-        <p>&copy; <span id="year"></span> Litheral AI. All rights reserved.</p>
-    </footer>
+        <div class="order-section">
+          <label><strong>Quantity (kg):</strong></label>
+          <div class="quantity">
+            <button onclick="this.nextElementSibling.textContent = Math.max(1, parseInt(this.nextElementSibling.textContent)-1)">−</button>
+            <span>1</span>
+            <button onclick="this.previousElementSibling.textContent = parseInt(this.previousElementSibling.textContent)+1">+</button>
+          </div>
 
-    <!-- Install notification banner -->
-    <div id="install-notification">
-        <span>Install Litheral for offline access & faster vibes?</span>
-        <button id="installBtn">Install</button>
-        <button id="close-install">×</button>
+          <div style="margin: 1.5rem 0;">
+            <a href="https://wa.me/234XXXXXXXXXX?text=I%20want%20to%20order%20Fresh%20Titus%201kg" class="btn btn-whatsapp">Order on WhatsApp</a>
+            <button class="btn" onclick="alert('Call us: 080XXXXXXXX or WhatsApp to order!')">Call to Order</button>
+          </div>
+
+          <p style="font-size:0.95rem; color:#4b5563; margin-top:1.5rem;">
+            Delivery fee: ₦800–1,500 (depending on location)<br>
+            Payment on delivery • Cash or Transfer
+          </p>
+        </div>
+      </div>
     </div>
+  </main>
 
-    <script>
-        document.getElementById('year').textContent = new Date().getFullYear();
+  <footer>
+    <p>&copy; 2026 Fresh Fish Market Lagos • Contact: 080XXXXXXXX • WhatsApp only</p>
+  </footer>
 
-        const supabase = supabase.createClient('YOUR_URL', 'YOUR_KEY');
-        supabase.auth.onAuthStateChange((event, session) => {
-            if (session) window.location.href = 'app.html';
-        });
-
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js');
-            });
-        }
-
-        let deferredPrompt;
-
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            document.getElementById('install-notification').classList.add('show');
-        });
-
-        document.getElementById('installBtn').addEventListener('click', async () => {
-            if (!deferredPrompt) return;
-
-            const installBtn = document.getElementById('installBtn');
-            installBtn.textContent = 'Installing...';
-            installBtn.disabled = true;
-
-            deferredPrompt.prompt();
-
-            const { outcome } = await deferredPrompt.userChoice;
-
-            if (outcome === 'accepted') {
-                installBtn.textContent = 'Installed!';
-                setTimeout(() => {
-                    document.getElementById('install-notification').classList.remove('show');
-                }, 2500);
-            } else {
-                installBtn.textContent = 'Install';
-                installBtn.disabled = false;
-            }
-
-            deferredPrompt = null;
-        });
-
-        document.getElementById('close-install').addEventListener('click', () => {
-            document.getElementById('install-notification').classList.remove('show');
-        });
-
-        window.addEventListener('appinstalled', () => {
-            document.getElementById('install-notification').classList.remove('show');
-        });
-    </script>
 </body>
 </html>
