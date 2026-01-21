@@ -19,173 +19,167 @@
         .container { text-align: center; transition: all 0.5s ease; width: 80%; max-width: 400px; }
         h1 { font-weight: 300; letter-spacing: 2px; margin-bottom: 30px; }
         
-        /* Setup UI */
-        input { 
-            padding: 15px; border-radius: 12px; border: 1px solid #334155; 
-            background: #1e293b; color: white; font-size: 1.1rem; 
-            outline: none; text-align: center; width: 100%; box-sizing: border-box;
-        }
-        button {
-            margin-top: 20px; padding: 15px 30px; border-radius: 12px; border: none;
-            background: var(--accent); color: var(--bg); font-weight: bold;
-            cursor: pointer; width: 100%; font-size: 1rem; transition: transform 0.2s;
-        }
-        button:hover { transform: scale(1.02); }
-
-        /* Active UI */
-        .hidden { display: none; opacity: 0; }
-        .pulse-wrapper { position: relative; width: 150px; height: 150px; margin: auto; }
+        .pulse-wrapper { position: relative; width: 180px; height: 180px; margin: auto; }
         .pulse {
             position: absolute; width: 100%; height: 100%;
             background: var(--accent); border-radius: 50%;
-            box-shadow: 0 0 30px var(--accent);
-            animation: pulse-anim 4s infinite ease-in-out;
-            opacity: 0.6;
+            box-shadow: 0 0 40px var(--accent);
+            animation: pulse-anim 3.5s infinite ease-in-out;
+            opacity: 0.5;
         }
         @keyframes pulse-anim {
-            0% { transform: scale(0.8); opacity: 0.3; }
-            50% { transform: scale(1.1); opacity: 0.6; }
+            0%   { transform: scale(0.8); opacity: 0.3; }
+            50%  { transform: scale(1.15); opacity: 0.7; }
             100% { transform: scale(0.8); opacity: 0.3; }
         }
-        #status-text { margin-top: 30px; font-size: 0.9rem; opacity: 0.5; font-style: italic; }
+        #litheral-speech {
+            margin-top: 50px;
+            min-height: 2em;
+            font-size: 1.3rem;
+            font-weight: 300;
+            line-height: 1.4;
+        }
+        #status-text {
+            margin-top: 30px;
+            font-size: 1rem;
+            opacity: 0.6;
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
 
-    <div id="setup" class="container">
+    <div class="container">
         <h1>LITHERAL</h1>
-        <input type="text" id="userNameInput" placeholder="Enter your name..." autocomplete="off">
-        <button onclick="initLitheral()">Wake up Litheral</button>
-    </div>
-
-    <div id="active-session" class="container hidden">
         <div class="pulse-wrapper">
             <div class="pulse"></div>
         </div>
-        <p id="litheral-speech" style="margin-top: 40px; min-height: 1.5em; font-weight: 300;"></p>
-        <p id="status-text">Litheral is present</p>
-        
-        <audio id="silentPlayer" loop>
-            <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
-        </audio>
+        <p id="litheral-speech">Say "Litheral" or "buddy" to wake me up...</p>
+        <p id="status-text">Litheral is listening...</p>
     </div>
 
     <script>
-        let userName = "";
-        let phoneticName = ""; 
-        let currentMode = "GET_PRONUNCIATION";
+        // ────────────────────────────────────────────────
+        //  CONFIG – CHANGE THESE IF YOU WANT DIFFERENT MODEL/PROVIDER
+        // ────────────────────────────────────────────────
+        const API_PROVIDER = "groq"; // "groq", "gemini", "deepseek", etc.
+        const GROQ_API_KEY = "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";
+        const MODEL = "llama-3.1-70b-versatile"; // or "mixtral-8x7b-32768"
 
-        // Initialize Speech Recognition
+        const WAKE_WORDS = ["litheral", "buddy"];
+
+        // ────────────────────────────────────────────────
+        //  Speech setup
+        // ────────────────────────────────────────────────
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         const recognition = new SpeechRecognition();
         recognition.continuous = false;
         recognition.interimResults = false;
-        recognition.lang = 'en-US';
+        recognition.lang = 'en-US'; // can change to 'en-NG' if better support comes
 
-        function speak(text, callback) {
-            document.getElementById('litheral-speech').innerText = ""; // Hide text for true voice-first feel
+        function speak(text) {
             const utterance = new SpeechSynthesisUtterance(text);
-            utterance.rate = 0.9; 
-            utterance.pitch = 1.0;
-            
-            utterance.onend = () => { 
-                if (callback) callback(); 
-            };
+            utterance.rate = 1.0;
+            utterance.pitch = 1.05;
+            utterance.volume = 1.0;
             window.speechSynthesis.speak(utterance);
-        }
 
-        function initLitheral() {
-            userName = document.getElementById('userNameInput').value;
-            if(!userName) return alert("How should I spell your name?");
-
-            // Switch UI
-            document.getElementById('setup').classList.add('hidden');
-            setTimeout(() => {
-                document.getElementById('setup').style.display = 'none';
-                document.getElementById('active-session').classList.remove('hidden');
-            }, 500);
-
-            // Start Audio Hack
-            const audio = document.getElementById('silentPlayer');
-            audio.volume = 0.01; 
-            audio.play().catch(e => console.log("Audio play blocked until click."));
-
-            // Start Conversation
-            speak(`Hi ${userName}. I want to make sure I say your name right. Go ahead and say it for me?`, () => {
-                startListening();
-            });
+            document.getElementById('litheral-speech').textContent = text;
+            document.getElementById('status-text').textContent = "Speaking...";
+            
+            utterance.onend = () => {
+                document.getElementById('status-text').textContent = "Listening...";
+                startListening(); // auto-restart
+            };
         }
 
         function startListening() {
-            document.getElementById('status-text').innerText = "Litheral is listening...";
-            recognition.start();
-        }
-
-        recognition.onresult = (event) => {
-            const transcript = event.results[0][0].transcript;
-            document.getElementById('status-text').innerText = "Litheral is thinking...";
-            
-            handleVoiceLogic(transcript);
-        };
-
-        recognition.onerror = () => {
-            document.getElementById('status-text').innerText = "Litheral is present";
-            // If it times out, wait a bit and try again if we are still in onboarding
-            if(currentMode !== "IDLE") setTimeout(startListening, 3000);
-        };
-
-        function handleVoiceLogic(said) {
-            console.log("User said:", said);
-
-            if (currentMode === "GET_PRONUNCIATION") {
-                phoneticName = said;
-                currentMode = "CONFIRM_PRONUNCIATION";
-                speak(`Okay, I heard ${phoneticName}. Did I get that right?`, () => {
-                    startListening();
-                });
-            } 
-            
-            else if (currentMode === "CONFIRM_PRONUNCIATION") {
-                if (said.toLowerCase().includes("yes") || said.toLowerCase().includes("yeah") || said.toLowerCase().includes("sure")) {
-                    currentMode = "GET_COUNTRY";
-                    speak(`Perfect, ${phoneticName}. I'll remember that. So, what part of the world are you in?`, () => {
-                        startListening();
-                    });
-                } else {
-                    currentMode = "GET_PRONUNCIATION";
-                    speak("My bad. Say your name one more time, nice and clear?", () => {
-                        startListening();
-                    });
-                }
-            }
-
-            else if (currentMode === "GET_COUNTRY") {
-                const country = said;
-                currentMode = "IDLE";
-                speak(`Noted, ${country} homie. I'm going to hang back now and just be here with you. I'll check in later.`, () => {
-                    document.getElementById('status-text').innerText = "Litheral is in the background";
-                    scheduleRandomCheckIn();
-                });
+            try {
+                recognition.start();
+            } catch (e) {
+                console.warn("Recognition already active or error", e);
+                setTimeout(startListening, 1500);
             }
         }
 
-        function scheduleRandomCheckIn() {
-            // Logic for proactive random nudges
-            const min = 45 * 60 * 1000; // 45 mins
-            const max = 90 * 60 * 1000; // 90 mins
-            const delay = Math.floor(Math.random() * (max - min + 1) + min);
+        recognition.onresult = async (event) => {
+            const said = event.results[0][0].transcript.trim().toLowerCase();
+            console.log("Heard:", said);
 
-            setTimeout(() => {
-                const thoughts = [
-                    `Hey ${phoneticName}, just checking in. You doing okay?`,
-                    `It's been a bit quiet. Just wanted to let you know I'm still here.`,
-                    `Don't forget to take a sip of water, ${phoneticName}.`
-                ];
-                const pick = thoughts[Math.floor(Math.random() * thoughts.length)];
-                speak(pick);
-                scheduleRandomCheckIn(); // Loop the randomness
-            }, delay);
+            // Check for wake word
+            const wakeWordFound = WAKE_WORDS.some(w => said.includes(w));
+            if (!wakeWordFound) {
+                startListening(); // ignore, keep listening
+                return;
+            }
+
+            // Remove wake word from message
+            let message = said;
+            WAKE_WORDS.forEach(w => {
+                message = message.replace(w, '').trim();
+            });
+
+            if (!message) {
+                speak("Yes? How can I help you?");
+                return;
+            }
+
+            document.getElementById('status-text').textContent = "Thinking...";
+            await talkToAI(message);
+        };
+
+        recognition.onerror = (event) => {
+            console.log("Recognition error:", event.error);
+            if (event.error === "no-speech" || event.error === "aborted") {
+                startListening();
+            } else {
+                setTimeout(startListening, 2000);
+            }
+        };
+
+        recognition.onend = () => {
+            startListening(); // keep the loop alive
+        };
+
+        // ────────────────────────────────────────────────
+        //  REAL AI CALL (Groq example – change provider if needed)
+        // ────────────────────────────────────────────────
+        async function talkToAI(userMessage) {
+            try {
+                const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        "Authorization": `Bearer ${GROQ_API_KEY}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        model: MODEL,
+                        messages: [
+                            { role: "system", content: "You are Litheral, a warm, supportive, slightly witty personal companion. Be helpful, empathetic, concise, and speak naturally like a close friend." },
+                            { role: "user", content: userMessage }
+                        ],
+                        temperature: 0.8,
+                        max_tokens: 200
+                    })
+                });
+
+                if (!response.ok) throw new Error("API error");
+
+                const data = await response.json();
+                const reply = data.choices[0].message.content.trim();
+
+                speak(reply);
+            } catch (err) {
+                console.error("AI error:", err);
+                speak("Sorry, something went wrong with my brain just now. Can you say that again?");
+            }
         }
+
+        // Start listening when page loads
+        window.addEventListener('load', () => {
+            speak("Hey, I'm Litheral. Say 'Litheral' or 'buddy' whenever you want to talk.");
+            setTimeout(startListening, 1500);
+        });
     </script>
 </body>
 </html>
